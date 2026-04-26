@@ -680,15 +680,7 @@ On **ne déploie pas avec Helm ici**, on observe seulement le rendu.
 
 ### 1. Vérifier Helm
 
-#### Windows
-
 ```powershell
-helm version
-```
-
-#### Linux
-
-```bash
 helm version
 ```
 
