@@ -526,18 +526,18 @@ Lancez maintenant le build du backend.
 ### Sous Windows
 
 ```powershell
-oc start-build campus-backend --from-dir=.\training\campus-app\backend --follow
+oc start-build campus-backend --from-dir=.\campus-app\backend --follow
 ```
 
 ### Sous Linux
 
 ```bash
-oc start-build campus-backend --from-dir=./training/campus-app/backend --follow
+oc start-build campus-backend --from-dir=./campus-app/backend --follow
 ```
 
 Ce que fait cette commande :
 
-- elle prend le contenu du dossier `training/campus-app/backend` ;
+- elle prend le contenu du dossier `campus-app/backend` ;
 - elle l’envoie au `BuildConfig` `campus-backend` ;
 - OpenShift construit l’image ;
 - l’image est stockée dans `campus-backend:latest`.
@@ -561,7 +561,7 @@ Les causes les plus fréquentes sont :
 Le premier réflexe est simple :
 
 - relire la fin du log du build ;
-- vérifier que le dossier `training/campus-app/backend` existe bien ;
+- vérifier que le dossier `campus-app/backend` existe bien ;
 - relancer ensuite le build si nécessaire.
 
 </details>
@@ -573,18 +573,18 @@ Lancez ensuite le build du frontend.
 ### Sous Windows
 
 ```powershell
-oc start-build campus-frontend --from-dir=.\training\campus-app\frontend --follow
+oc start-build campus-frontend --from-dir=.\campus-app\frontend --follow
 ```
 
 ### Sous Linux
 
 ```bash
-oc start-build campus-frontend --from-dir=./training/campus-app/frontend --follow
+oc start-build campus-frontend --from-dir=./campus-app/frontend --follow
 ```
 
 Ici aussi :
 
-- le contenu du dossier `training/campus-app/frontend` est envoyé ;
+- le contenu du dossier `campus-app/frontend` est envoyé ;
 - OpenShift construit l’image ;
 - l’image est stockée dans `campus-frontend:latest`.
 

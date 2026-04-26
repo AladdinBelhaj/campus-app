@@ -36,7 +36,7 @@ Cette application a volontairement une taille modeste. Elle est assez simple pou
 
 Aperçu du schéma :
 
-![Architecture applicative du Portail Horizon Stages](../../assets/architecture-campus-app-sandbox.svg)
+![Architecture applicative du Portail Horizon Stages](../assets/architecture-campus-app-sandbox.svg)
 
 ## Lecture guidée de l’architecture
 
@@ -72,12 +72,12 @@ En version OpenShift Sandbox, on retrouve la même logique applicative, mais ave
 
 Avant de lancer quoi que ce soit, ouvrez les fichiers suivants dans le dépôt :
 
-- [frontend/app.js](../../campus-app/frontend/app.js)
-- [frontend/nginx.local.conf](../../campus-app/frontend/nginx.local.conf)
-- [frontend/nginx.conf](../../campus-app/frontend/nginx.conf)
-- [backend/src/main/java/com/okdlab/campus/api/CampusApiController.java](../../campus-app/backend/src/main/java/com/okdlab/campus/api/CampusApiController.java)
-- [backend/src/main/java/com/okdlab/campus/service/CampusMetricsService.java](../../campus-app/backend/src/main/java/com/okdlab/campus/service/CampusMetricsService.java)
-- [backend/src/main/resources/application.yml](../../campus-app/backend/src/main/resources/application.yml)
+- [frontend/app.js](../campus-app/frontend/app.js)
+- [frontend/nginx.local.conf](../campus-app/frontend/nginx.local.conf)
+- [frontend/nginx.conf](../campus-app/frontend/nginx.conf)
+- [backend/src/main/java/com/okdlab/campus/api/CampusApiController.java](../campus-app/backend/src/main/java/com/okdlab/campus/api/CampusApiController.java)
+- [backend/src/main/java/com/okdlab/campus/service/CampusMetricsService.java](../campus-app/backend/src/main/java/com/okdlab/campus/service/CampusMetricsService.java)
+- [backend/src/main/resources/application.yml](../campus-app/backend/src/main/resources/application.yml)
 
 ### Ce qu’il faut observer dans le frontend
 
@@ -166,7 +166,7 @@ Vérifiez simplement que Docker est disponible sur votre poste.
 Depuis la racine du dépôt :
 
 ```powershell
-docker compose -f .\training\campus-app\docker-compose.local.yml up -d --build
+docker compose -f campus-app\docker-compose.local.yml up -d --build
 ```
 
 Cette commande démarre :
@@ -315,5 +315,5 @@ OpenShift va surtout vous apporter :
 Quand vous avez terminé :
 
 ```powershell
-docker compose -f .\training\campus-app\docker-compose.local.yml down
+docker compose -f campus-app\docker-compose.local.yml down
 ```

@@ -108,9 +108,9 @@ On va maintenant enrichir les manifests écrits dans le Lab 1.
 
 ### À faire
 
-1. ouvrez `training/manifests/sandbox-student/backend.yaml` ;
+1. ouvrez `manifests/sandbox-base/backend.yaml` ;
 2. ajoutez une `readinessProbe` et une `livenessProbe` au conteneur backend ;
-3. ouvrez `training/manifests/sandbox-student/frontend.yaml` ;
+3. ouvrez `manifests/sandbox-base/frontend.yaml` ;
 4. ajoutez une `readinessProbe` et une `livenessProbe` au conteneur frontend ;
 5. réappliquez ensuite la kustomization ;
 6. attendez le rollout des deux déploiements ;
@@ -119,7 +119,7 @@ On va maintenant enrichir les manifests écrits dans le Lab 1.
 ### Sous Windows
 
 ```powershell
-oc apply -k .\training\manifests\sandbox-student
+oc apply -k .\jour1\manifests\sandbox-base
 oc rollout status deployment/campus-backend
 oc rollout status deployment/campus-frontend
 ```
@@ -127,7 +127,7 @@ oc rollout status deployment/campus-frontend
 ### Sous Linux
 
 ```bash
-oc apply -k ./training/manifests/sandbox-student
+oc apply -k ./jour1/manifests/sandbox-base
 oc rollout status deployment/campus-backend
 oc rollout status deployment/campus-frontend
 ```
@@ -344,13 +344,13 @@ Relancez par exemple le build du frontend :
 ### Sous Windows
 
 ```powershell
-oc start-build campus-frontend --from-dir=.\training\campus-app\frontend --follow
+oc start-build campus-frontend --from-dir=.\campus-app\frontend --follow
 ```
 
 ### Sous Linux
 
 ```bash
-oc start-build campus-frontend --from-dir=./training/campus-app/frontend --follow
+oc start-build campus-frontend --from-dir=./campus-app/frontend --follow
 ```
 
 Pendant ou juste après ce build, regardez :
@@ -426,13 +426,13 @@ Puis lancez le build à partir du même code backend :
 ### Sous Windows
 
 ```powershell
-oc start-build campus-backend-s2i --from-dir=.\training\campus-app\backend --follow
+oc start-build campus-backend-s2i --from-dir=.\campus-app\backend --follow
 ```
 
 ### Sous Linux
 
 ```bash
-oc start-build campus-backend-s2i --from-dir=./training/campus-app/backend --follow
+oc start-build campus-backend-s2i --from-dir=./campus-app/backend --follow
 ```
 
 Vérifiez ensuite :
@@ -699,13 +699,13 @@ helm version
 #### Windows
 
 ```powershell
-helm create .\training\helm\campus-sandbox
+helm create .\jour1\manifests\helm\campus-sandbox
 ```
 
 #### Linux
 
 ```bash
-helm create ./training/helm/campus-sandbox
+helm create ./jour1/manifests/helm/campus-sandbox
 ```
 
 ---
@@ -789,7 +789,7 @@ spec:
 ### 7. Vérifier la chart
 
 ```powershell
-helm lint .\training\helm\campus-sandbox
+helm lint .\jour1\manifests\helm\campus-sandbox
 ```
 
 ---
@@ -797,7 +797,7 @@ helm lint .\training\helm\campus-sandbox
 ### 8. Générer le YAML
 
 ```powershell
-helm template campus-sandbox .\training\helm\campus-sandbox
+helm template campus-sandbox .\jour1\manifests\helm\campus-sandbox
 ```
 
 ---
@@ -831,8 +831,8 @@ Ne repartez pas de zéro.
 
 Utilisez :
 
-* `training/manifests/sandbox-student/backend.yaml`
-* `training/manifests/sandbox-student/frontend.yaml`
+* `jour1/manifests/sandbox-base/backend.yaml`
+* `jour1/manifests/sandbox-base/frontend.yaml`
 
 Puis remplacez les valeurs fixes :
 
