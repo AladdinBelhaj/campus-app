@@ -1,0 +1,12 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: campus-frontend
+spec:
+  to:
+    kind: Service
+    name: campus-frontend
+  port:
+    targetPort: http
+  tls:
+    termination: edge

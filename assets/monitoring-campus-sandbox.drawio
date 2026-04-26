@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" agent="Codex">
+  <diagram id="monitoring-campus-sandbox" name="Monitoring Sandbox">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="swimlane;whiteSpace=wrap;html=1;rounded=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" value="Monitoring intégré OpenShift" vertex="1">
+          <mxGeometry x="40" y="40" width="520" height="500" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Prometheus plateforme&#xa;métriques cluster par défaut" vertex="1">
+          <mxGeometry x="30" y="70" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Prometheus user workload&#xa;scrape des services applicatifs" vertex="1">
+          <mxGeometry x="280" y="70" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Observe &gt; Metrics&#xa;requêtes PromQL" vertex="1">
+          <mxGeometry x="165" y="250" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Métriques cluster&#xa;CPU, mémoire, pods, restarts" vertex="1">
+          <mxGeometry x="30" y="390" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Métriques applicatives&#xa;JVM, process, HTTP" vertex="1">
+          <mxGeometry x="245" y="390" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Métriques métier&#xa;campus_*" vertex="1">
+          <mxGeometry x="400" y="390" width="90" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="1" style="swimlane;whiteSpace=wrap;html=1;rounded=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" value="Projet Sandbox Campus" vertex="1">
+          <mxGeometry x="660" y="110" width="560" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="9" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Deployment + Service&#xa;campus-backend" vertex="1">
+          <mxGeometry x="80" y="120" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="9" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Micrometer + Actuator&#xa;/actuator/prometheus" vertex="1">
+          <mxGeometry x="310" y="120" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="12" parent="9" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="ServiceMonitor&#xa;campus-backend" vertex="1">
+          <mxGeometry x="185" y="290" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="13" edge="1" parent="2" source="3" target="5" style="endArrow=block;html=1;strokeWidth=2;" value="alimente" />
+        <mxCell id="14" edge="1" parent="2" source="4" target="5" style="endArrow=block;html=1;strokeWidth=2;" value="alimente" />
+        <mxCell id="15" edge="1" parent="2" source="5" target="6" style="endArrow=block;html=1;strokeWidth=2;" value="affiche" />
+        <mxCell id="16" edge="1" parent="2" source="5" target="7" style="endArrow=block;html=1;strokeWidth=2;" value="affiche" />
+        <mxCell id="17" edge="1" parent="2" source="5" target="8" style="endArrow=block;html=1;strokeWidth=2;" value="affiche" />
+        <mxCell id="18" edge="1" parent="9" source="10" target="11" style="endArrow=block;html=1;strokeWidth=2;" value="expose" />
+        <mxCell id="19" edge="1" parent="9" source="12" target="10" style="endArrow=block;html=1;strokeWidth=2;" value="cible le service" />
+        <mxCell id="20" edge="1" parent="1" source="12" target="4" style="endArrow=block;html=1;strokeWidth=2;" value="indique quoi scraper" />
+        <mxCell id="21" edge="1" parent="1" source="11" target="4" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" value="métriques Campus" />
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

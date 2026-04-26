@@ -1,0 +1,83 @@
+<mxfile host="app.diagrams.net" agent="Codex">
+  <diagram id="private-okd-aws" name="Architecture">
+    <mxGraphModel dx="1187" dy="619" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="POSTE LOCAL&#xa;- Firefox&#xa;- Depot Git&#xa;- SSH" vertex="1">
+          <mxGeometry height="100" width="180" x="70" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="BASTION AWS&#xa;- oc&#xa;- diagnostics&#xa;- manifests&#xa;- builds" vertex="1">
+          <mxGeometry height="120" width="190" x="330" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="API privee OKD&#xa;6443" vertex="1">
+          <mxGeometry height="70" width="150" x="610" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" value="CONTROL PLANES&#xa;x3" vertex="1">
+          <mxGeometry height="80" width="150" x="830" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" value="WORKERS&#xa;x2 ou plus" vertex="1">
+          <mxGeometry height="80" width="150" x="830" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" value="INGRESS / ROUTES&#xa;apps.&lt;cluster&gt;.&lt;base_domain&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="610" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="DNS prive AWS&#xa;Route53 private zone" vertex="1">
+          <mxGeometry height="80" width="180" x="610" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="FRONTEND&#xa;campus-frontend" vertex="1">
+          <mxGeometry height="70" width="150" x="1060" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="BACKEND&#xa;campus-backend" vertex="1">
+          <mxGeometry height="70" width="150" x="1060" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="POSTGRESQL&#xa;campus-db / Kubegres" vertex="1">
+          <mxGeometry height="80" width="170" x="1050" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="12" edge="1" parent="1" source="2" style="endArrow=block;html=1;strokeWidth=2;" target="3" value="SSH">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" edge="1" parent="1" source="2" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="3" value="SOCKS5 Firefox">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" edge="1" parent="1" source="3" style="endArrow=block;html=1;strokeWidth=2;" target="4" value="oc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="15" edge="1" parent="1" source="4" style="endArrow=block;html=1;strokeWidth=2;" target="5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="16" edge="1" parent="1" source="5" style="endArrow=block;html=1;strokeWidth=2;" target="6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="17" edge="1" parent="1" source="7" style="endArrow=block;html=1;strokeWidth=2;" target="9" value="Route">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="18" edge="1" parent="1" source="9" style="endArrow=block;html=1;strokeWidth=2;" target="10" value="Service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="19" edge="1" parent="1" source="10" style="endArrow=block;html=1;strokeWidth=2;" target="11" value="Service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="20" edge="1" parent="1" source="8" style="endArrow=block;html=1;strokeWidth=2;" target="7" value="publication interne">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" edge="1" parent="1" source="3" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="7" value="console + routes privees">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" edge="1" parent="1" source="6" style="endArrow=block;html=1;strokeWidth=2;" target="9" value="workloads">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" edge="1" parent="1" source="6" style="endArrow=block;html=1;strokeWidth=2;" target="10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" edge="1" parent="1" source="6" style="endArrow=block;html=1;strokeWidth=2;" target="11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

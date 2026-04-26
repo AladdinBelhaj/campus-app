@@ -1,0 +1,53 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: campus-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/campus}
+    username: ${SPRING_DATASOURCE_USERNAME:campus}
+    password: ${SPRING_DATASOURCE_PASSWORD:campus}
+    hikari:
+      maximum-pool-size: 8
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: campus-backend
+      scenario: universite-horizon
+
+info:
+  application:
+    name: Campus Summer Portal
+    audience: Administrateurs reseaux et systemes
+    training: OKD version 1.0.0

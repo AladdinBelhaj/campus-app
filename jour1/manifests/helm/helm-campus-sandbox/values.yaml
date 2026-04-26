@@ -1,0 +1,56 @@
+backend:
+  name: campus-backend
+  image: campus-backend:latest
+  replicas: 1
+  containerPort: 8080
+  service:
+    port: 8080
+  datasource:
+    url: jdbc:postgresql://campus-db:5432/campus
+    secretName: campus-db-secret
+    usernameKey: username
+    passwordKey: password
+  readinessProbe:
+    path: /actuator/health/readiness
+    initialDelaySeconds: 20
+    periodSeconds: 10
+  livenessProbe:
+    path: /actuator/health/liveness
+    initialDelaySeconds: 40
+    periodSeconds: 20
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+frontend:
+  name: campus-frontend
+  image: campus-frontend:latest
+  replicas: 1
+  containerPort: 8080
+  service:
+    port: 8080
+  readinessProbe:
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  livenessProbe:
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 20
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+route:
+  name: campus-frontend
+  targetService: campus-frontend
+  targetPort: http
+  tlsTermination: edge

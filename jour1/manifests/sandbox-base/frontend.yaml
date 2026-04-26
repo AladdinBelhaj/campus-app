@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campus-frontend
+  annotations:
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"campus-frontend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"frontend\")].image","paused":false}]
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: campus-frontend
+  template:
+    metadata:
+      labels:
+        app: campus-frontend
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: campus-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: campus-frontend
+spec:
+  selector:
+    app: campus-frontend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

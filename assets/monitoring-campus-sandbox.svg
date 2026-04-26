@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+    <style>
+      .title { font: 700 24px Arial, sans-serif; fill: #222; }
+      .lane { fill: #f5f5f5; stroke: #666; stroke-width: 2; rx: 12; ry: 12; }
+      .boxblue { fill: #dae8fc; stroke: #6c8ebf; stroke-width: 2; rx: 10; ry: 10; }
+      .boxgreen { fill: #d5e8d4; stroke: #82b366; stroke-width: 2; rx: 10; ry: 10; }
+      .boxyellow { fill: #fff2cc; stroke: #d6b656; stroke-width: 2; rx: 10; ry: 10; }
+      .boxorange { fill: #ffe6cc; stroke: #d79b00; stroke-width: 2; rx: 10; ry: 10; }
+      .boxpurple { fill: #e1d5e7; stroke: #9673a6; stroke-width: 2; rx: 10; ry: 10; }
+      .label { font: 700 18px Arial, sans-serif; fill: #222; }
+      .text { font: 15px Arial, sans-serif; fill: #222; }
+      .small { font: 14px Arial, sans-serif; fill: #333; }
+      .arrow { stroke: #555; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <text x="40" y="35" class="title">Monitoring Campus dans le Developer Sandbox</text>
+
+  <rect x="40" y="60" width="560" height="600" class="lane"/>
+  <text x="65" y="95" class="label">Monitoring intégré OpenShift</text>
+
+  <rect x="80" y="130" width="190" height="100" class="boxblue"/>
+  <text x="105" y="168" class="text">Prometheus plateforme</text>
+  <text x="103" y="193" class="small">métriques cluster par défaut</text>
+
+  <rect x="330" y="130" width="220" height="100" class="boxblue"/>
+  <text x="358" y="168" class="text">Prometheus user workload</text>
+  <text x="360" y="193" class="small">scrape des services applicatifs</text>
+
+  <rect x="215" y="300" width="210" height="95" class="boxyellow"/>
+  <text x="260" y="338" class="text">Observe &gt; Metrics</text>
+  <text x="255" y="363" class="small">requêtes PromQL</text>
+
+  <rect x="80" y="470" width="180" height="95" class="boxpurple"/>
+  <text x="102" y="508" class="text">Métriques cluster</text>
+  <text x="102" y="533" class="small">CPU, mémoire, pods, restarts</text>
+
+  <rect x="285" y="470" width="160" height="95" class="boxpurple"/>
+  <text x="300" y="508" class="text">Métriques applicatives</text>
+  <text x="323" y="533" class="small">JVM, process, HTTP</text>
+
+  <rect x="470" y="470" width="100" height="95" class="boxpurple"/>
+  <text x="490" y="508" class="text">Métriques métier</text>
+  <text x="495" y="533" class="small">campus_*</text>
+
+  <rect x="700" y="120" width="640" height="540" class="lane"/>
+  <text x="725" y="155" class="label">Projet Sandbox Campus</text>
+
+  <rect x="770" y="220" width="190" height="105" class="boxgreen"/>
+  <text x="798" y="258" class="text">Deployment + Service</text>
+  <text x="812" y="283" class="small">campus-backend</text>
+
+  <rect x="1020" y="220" width="220" height="105" class="boxyellow"/>
+  <text x="1056" y="258" class="text">Micrometer + Actuator</text>
+  <text x="1060" y="283" class="small">/actuator/prometheus</text>
+
+  <rect x="900" y="420" width="210" height="95" class="boxorange"/>
+  <text x="945" y="458" class="text">ServiceMonitor</text>
+  <text x="942" y="483" class="small">campus-backend</text>
+
+  <path d="M270 180 L320 180 L320 300" class="arrow"/>
+  <path d="M440 230 L440 300" class="arrow"/>
+  <path d="M320 395 L170 470" class="arrow"/>
+  <path d="M320 395 L365 470" class="arrow"/>
+  <path d="M320 395 L520 470" class="arrow"/>
+
+  <path d="M960 272 L1020 272" class="arrow"/>
+  <path d="M1005 420 L1005 335 L865 335 L865 325" class="arrow"/>
+  <path d="M1110 470 L1180 470 L1180 330" class="arrow"/>
+  <text x="1120" y="448" class="small">scrape toutes les 30 s</text>
+</svg>

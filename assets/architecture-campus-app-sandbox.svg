@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760">
+  <defs>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #1f2937; }
+      .subtitle { font: 600 18px "Segoe UI", Arial, sans-serif; fill: #374151; }
+      .label { font: 600 17px "Segoe UI", Arial, sans-serif; fill: #111827; }
+      .small { font: 15px "Segoe UI", Arial, sans-serif; fill: #374151; }
+      .group { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; rx: 20; ry: 20; }
+      .local { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; rx: 16; ry: 16; }
+      .backend { fill: #ecfdf5; stroke: #16a34a; stroke-width: 2; rx: 16; ry: 16; }
+      .frontend { fill: #fff7ed; stroke: #ea580c; stroke-width: 2; rx: 16; ry: 16; }
+      .database { fill: #fef2f2; stroke: #dc2626; stroke-width: 2; rx: 16; ry: 16; }
+      .observe { fill: #faf5ff; stroke: #9333ea; stroke-width: 2; rx: 16; ry: 16; }
+      .build { fill: #fefce8; stroke: #ca8a04; stroke-width: 2; rx: 16; ry: 16; }
+      .arrow { stroke: #475569; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 10 8; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="45" class="title">Architecture applicative du Portail Horizon Stages</text>
+  <text x="40" y="78" class="subtitle">Chemin pédagogique : comprendre l’application localement, observer les métriques, puis builder et déployer dans le Developer Sandbox.</text>
+
+  <rect x="40" y="110" width="560" height="590" class="group"/>
+  <text x="70" y="150" class="subtitle">Boucle locale de validation</text>
+
+  <rect x="70" y="190" width="190" height="110" class="local"/>
+  <text x="95" y="225" class="label">Poste local</text>
+  <text x="95" y="255" class="small">Navigateur</text>
+  <text x="95" y="280" class="small">Docker Compose</text>
+
+  <rect x="300" y="190" width="180" height="110" class="frontend"/>
+  <text x="325" y="225" class="label">Frontend local</text>
+  <text x="325" y="255" class="small">NGINX</text>
+  <text x="325" y="280" class="small">http://localhost:8081</text>
+
+  <rect x="300" y="360" width="210" height="120" class="backend"/>
+  <text x="325" y="398" class="label">Backend Spring Boot</text>
+  <text x="325" y="425" class="small">API REST</text>
+  <text x="325" y="450" class="small">http://localhost:8080</text>
+
+  <rect x="70" y="400" width="190" height="90" class="observe"/>
+  <text x="95" y="438" class="label">Prometheus local</text>
+  <text x="95" y="465" class="small">scrape /actuator/prometheus</text>
+
+  <rect x="70" y="540" width="190" height="90" class="database"/>
+  <text x="95" y="578" class="label">PostgreSQL</text>
+  <text x="95" y="605" class="small">campus</text>
+
+  <rect x="300" y="540" width="210" height="90" class="observe"/>
+  <text x="325" y="578" class="label">Micrometer + Actuator</text>
+  <text x="325" y="605" class="small">compteurs et jauges métier</text>
+
+  <path d="M 260 245 L 300 245" class="arrow"/>
+  <path d="M 390 300 L 390 360" class="arrow"/>
+  <path d="M 260 445 L 300 430" class="arrow"/>
+  <path d="M 390 480 L 390 540" class="arrow"/>
+  <path d="M 300 430 C 255 470, 225 520, 180 585" class="arrow"/>
+
+  <rect x="680" y="110" width="680" height="590" class="group"/>
+  <text x="710" y="150" class="subtitle">Developer Sandbox OpenShift</text>
+
+  <rect x="720" y="190" width="180" height="100" class="local"/>
+  <text x="745" y="225" class="label">Projet Sandbox</text>
+  <text x="745" y="252" class="small">un namespace utilisateur</text>
+
+  <rect x="950" y="190" width="170" height="100" class="build"/>
+  <text x="975" y="225" class="label">BuildConfig</text>
+  <text x="975" y="252" class="small">campus-backend</text>
+
+  <rect x="1150" y="190" width="170" height="100" class="build"/>
+  <text x="1175" y="225" class="label">BuildConfig</text>
+  <text x="1175" y="252" class="small">campus-frontend</text>
+
+  <rect x="900" y="390" width="150" height="110" class="backend"/>
+  <text x="925" y="430" class="label">Deployment</text>
+  <text x="925" y="458" class="small">campus-backend</text>
+
+  <rect x="1080" y="390" width="150" height="110" class="frontend"/>
+  <text x="1105" y="430" class="label">Deployment</text>
+  <text x="1105" y="458" class="small">campus-frontend</text>
+
+  <rect x="1260" y="390" width="80" height="110" class="database"/>
+  <text x="1272" y="430" class="label">DB</text>
+  <text x="1272" y="458" class="small">PVC</text>
+
+  <rect x="1080" y="560" width="150" height="90" class="local"/>
+  <text x="1110" y="598" class="label">Route publique</text>
+  <text x="1110" y="625" class="small">frontend</text>
+
+  <rect x="900" y="560" width="150" height="90" class="observe"/>
+  <text x="925" y="598" class="label">Métriques</text>
+  <text x="925" y="625" class="small">/actuator/prometheus</text>
+
+  <path d="M 900 240 L 950 240" class="arrow"/>
+  <path d="M 1120 240 L 1150 240" class="arrow"/>
+  <path d="M 1035 290 L 975 390" class="arrow"/>
+  <path d="M 1235 290 L 1155 390" class="arrow"/>
+  <path d="M 1050 445 L 1080 445" class="arrow"/>
+  <path d="M 1230 445 L 1260 445" class="arrow"/>
+  <path d="M 1155 500 L 1155 560" class="arrow"/>
+  <path d="M 975 500 L 975 560" class="arrow"/>
+
+  <path d="M 480 250 C 620 250, 760 250, 950 250" class="arrow dashed"/>
+  <path d="M 510 430 C 650 430, 760 430, 900 430" class="arrow dashed"/>
+  <text x="610" y="225" class="small">mêmes sources applicatives</text>
+  <text x="620" y="405" class="small">même backend instrumenté</text>
+</svg>

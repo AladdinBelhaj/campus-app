@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Summer Portal</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero">
+      <p class="eyebrow">Universite Horizon</p>
+      <h1>Campus Summer Portal</h1>
+      <p class="hero-copy">
+        Portail de stages et de services numeriques deploye sur OKD pour les labs OpenShift.
+      </p>
+      <div class="hero-badges">
+        <span>3 tiers</span>
+        <span>Spring Boot</span>
+        <span>Prometheus ready</span>
+      </div>
+    </section>
+
+    <section class="dashboard-grid" id="dashboard-cards">
+      <article class="card stat-card">
+        <h2>Departements</h2>
+        <strong id="departments-count">-</strong>
+      </article>
+      <article class="card stat-card">
+        <h2>Offres publiees</h2>
+        <strong id="offers-count">-</strong>
+      </article>
+      <article class="card stat-card">
+        <h2>Candidatures</h2>
+        <strong id="applications-count">-</strong>
+      </article>
+      <article class="card stat-card">
+        <h2>En attente</h2>
+        <strong id="pending-count">-</strong>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="card">
+        <div class="section-head">
+          <h2>Offres de stage</h2>
+          <span id="backend-health" class="pill">API inconnue</span>
+        </div>
+        <div id="offers-list" class="stack-list"></div>
+      </article>
+
+      <article class="card">
+        <div class="section-head">
+          <h2>Candidature rapide</h2>
+          <span class="pill subtle">POST /api/applications</span>
+        </div>
+        <form id="application-form" class="application-form">
+          <label>
+            Nom complet
+            <input type="text" name="studentName" required maxlength="120">
+          </label>
+          <label>
+            Email
+            <input type="email" name="studentEmail" required maxlength="160">
+          </label>
+          <label>
+            Parcours
+            <input type="text" name="track" required maxlength="120" placeholder="Master reseaux">
+          </label>
+          <label>
+            Offre
+            <select name="offerId" id="offer-select" required></select>
+          </label>
+          <label>
+            Motivation
+            <textarea name="notes" required maxlength="500"></textarea>
+          </label>
+          <button type="submit">Envoyer la candidature</button>
+          <p id="form-message" class="form-message"></p>
+        </form>
+      </article>
+    </section>
+
+    <section class="content-grid secondary">
+      <article class="card">
+        <div class="section-head">
+          <h2>Departements</h2>
+          <span class="pill subtle">RBAC ready</span>
+        </div>
+        <div id="departments-list" class="stack-list compact"></div>
+      </article>
+
+      <article class="card">
+        <div class="section-head">
+          <h2>Dernieres candidatures</h2>
+          <span class="pill subtle">DB + API</span>
+        </div>
+        <div id="applications-list" class="stack-list compact"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
