@@ -1,8 +1,8 @@
-# Lab - Recréer Campus depuis la console sur un cluster OKD single-node
+# Lab - Recréer Campus depuis la console sur un cluster OKD
 
 ## Objectif 
 
-Dans ce lab, vous allez recréer l'application **Campus** depuis la **console OpenShift**, sans vous appuyer sur `oc apply -k`.
+Dans ce lab, vous allez recréer l'application **Campus** depuis la **console OpenShift**, sans vous appuyer sur le client `oc`.
 
 Le but est de refaire calmement toute la chaîne :
 
@@ -37,7 +37,7 @@ exemple: `https://gitlab.com/rym.regaieg/okd-training.git`
 
 Le backend Campus est un projet Spring Boot Java 21.
 
-Sur ce cluster, nous n'utilisons pas ici un builder S2I Java 21 depuis la console. Pour rester cohérents avec le code source du dépôt, nous utilisons donc :
+Pour rester cohérents avec le code source du dépôt, nous utilisons donc :
 
 - un `BuildConfig` de type `Docker` pour le backend ;
 - un `BuildConfig` de type `Docker` pour le frontend.
