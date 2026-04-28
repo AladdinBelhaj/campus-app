@@ -112,3 +112,18 @@ Si le problème vient bien de la SCC et du user runtime (detecté dans les logs)
 ```powershell
 oc adm policy add-scc-to-user anyuid -z default -n p1-lab
 ```
+
+`anyuid` permet à un conteneur de démarrer avec l’UID prévu par son image.
+
+Pourquoi l’ajouter ici :
+- par défaut, OpenShift applique souvent `restricted-v2`
+- cette SCC limite fortement la manière dont le conteneur peut s’exécuter
+- certaines images PostgreSQL classiques font au démarrage :
+  - des `chmod`
+  - des écritures dans des répertoires système/applicatifs
+  - des hooks de promotion/réplication
+- avec `restricted-v2`, ces actions peuvent échouer
+
+Dans notre cas, les signaux sur les logs sont typiques :
+- `FailedPostStartHook`
+- `chmod ... Operation not permitted`
