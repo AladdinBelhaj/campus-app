@@ -84,3 +84,31 @@ Sur votre cluster ROSA Classic actuel :
 - si vous voulez adosser Kubegres a ODF/Ceph, utilisez plutot :
   - `ocs-storagecluster-ceph-rbd` pour la base PostgreSQL
   - `ocs-storagecluster-cephfs` pour un PVC de backup partage
+
+  
+
+Kubegres cree normalement :
+
+- 1 pod primaire PostgreSQL
+- des replicas PostgreSQL selon `spec.replicas`
+- 2 services :
+  - `<nom-du-cluster>` pour le primaire
+  - `<nom-du-cluster>-replica` pour les replicas
+- 1 PVC par pod PostgreSQL
+
+## Etape 3 - Cas OpenShift : pods bloques par la SCC
+
+Sur OpenShift, il peut arriver que les pods PostgreSQL Kubegres restent bloqués lors de la simulation d'une panne, a cause des contraintes de securite.
+
+Dans ce cas, verifiez les pods :
+
+```powershell
+oc get pods -n p1-lab
+oc describe pod -np1-lab
+```
+
+Si le problème vient bien de la SCC et du user runtime (detecté dans les logs) , pour le lab vous pouvez autoriser `anyuid` au `serviceaccount` par defaut du namespace :
+
+```powershell
+oc adm policy add-scc-to-user anyuid -z default -n p1-lab
+```
