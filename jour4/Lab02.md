@@ -1,4 +1,4 @@
-# Lab 2 - Afficher les métriques Campus dans OpenShift Prometheus
+# Lab02 - Afficher les métriques Campus dans OpenShift Prometheus
 
 ## Objectif pédagogique
 

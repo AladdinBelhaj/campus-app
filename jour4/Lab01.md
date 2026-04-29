@@ -1,4 +1,4 @@
-# Lab 1 - Connecter Campus au monitoring OpenShift
+# Lab01 - Connecter Campus au monitoring OpenShift
 
 ## Objectif
 
@@ -10,7 +10,7 @@ Dans ce lab, vous allez distinguer :
 
 ## Schéma d’architecture observabilité
 
-![Schéma de monitoring du Sandbox](../../assets/monitoring-campus-sandbox.svg)
+![Schéma de monitoring du Sandbox](../assets/monitoring-campus-sandbox.svg)
 
 
 ### 1. OpenShift fournit déjà un monitoring intégré
@@ -28,7 +28,7 @@ Autrement dit :
 - pour les métriques de plateforme, vous ne partez pas de zéro ;
 - Prometheus fait déjà partie de la pile fournie par OpenShift.
 
-### 2. L’application Campus ( déja manipulé dans le jour1 sur sandbox)  expose déjà ses métriques
+### 2. L’application Campus ( déja manipulé )  expose déjà ses métriques
 
 Le backend Spring Boot expose l’endpoint :
 
@@ -80,13 +80,7 @@ Dans ce lab, vous allez faire le lien concret entre :
 
 ## Prérequis
 
-L’application doit déjà être déployée dans votre projet Sandbox.
-
-Vérifiez :
-
-```powershell
-oc get deploy,svc,route
-```
+L’application doit déjà être déployée dans votre projet OpenShift.
 
 Vous devez retrouver au minimum :
 
@@ -99,10 +93,12 @@ Vous devez retrouver au minimum :
 Commencez par ouvrir un port-forward :
 
 ```powershell
-oc port-forward service/campus-backend 8080:8080
+oc port-forward service/campus-backend 8080:8080 -n campus-p1
 ```
 
 Dans un second terminal, testez :
+
+### Windows PowerShell
 
 ```powershell
 Invoke-WebRequest -Uri http://localhost:8080/actuator/prometheus
@@ -110,9 +106,26 @@ Invoke-WebRequest -Uri http://localhost:8080/actuator/prometheus
 
 Puis recherchez le motif `campus_` :
 
+### Windows PowerShell
+
 ```powershell
 (Invoke-WebRequest -Uri http://localhost:8080/actuator/prometheus).Content | Select-String "campus_"
 ```
+
+---
+
+### Linux / macOS / Git Bash
+
+```bash
+curl http://localhost:8080/actuator/prometheus
+```
+
+Puis recherchez le motif `campus_` :
+
+```bash
+curl -s http://localhost:8080/actuator/prometheus | grep campus_
+```
+
 
 Ce que vous devez constater :
 
@@ -127,20 +140,38 @@ Quand c’est bon, arrêtez le port-forward.
 
 Vérifiez que le type de ressource existe dans votre cluster :
 
-```powershell
+
+### Windows PowerShell
+```powershell"
 oc api-resources | Select-String servicemonitor
 ```
 
+### Linux / macOS / Git Bash
+
+```bash"
+oc api-resources | grep servicemonitor
+```
 Le résultat attendu est simple :
 
 - vous devez voir `ServiceMonitor` dans la liste.
 
-## Étape 3 - Lire le manifest de monitoring Sandbox
+## Étape 3 - Manifest de monitoring
+Voici le manifest de monitoring du backend :
 
-Ouvrez le manifest prévu pour le backend Campus :
-
-- [campus-backend-servicemonitor.yaml](/C:/Users/h4mdi/Desktop/okd-aws/training/manifests/sandbox-monitoring/campus-backend-servicemonitor.yaml)
-
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: campus-backend
+spec:
+  selector:
+    matchLabels:
+      app: campus-backend
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /actuator/prometheus
+```
 Ce qu’il faut observer :
 
 - le `selector` cible le service `campus-backend` via son label ;
@@ -149,17 +180,12 @@ Ce qu’il faut observer :
 
 ## Étape 4 - Créer le `ServiceMonitor`
 
-Appliquez maintenant le dossier de monitoring Sandbox :
-
-```powershell
-oc apply -k .\training\manifests\sandbox-monitoring
-```
-
+Importer le manifest de monitoring dans votre projet :
 Vérifiez ensuite :
 
 ```powershell
-oc get servicemonitor
-oc describe servicemonitor campus-backend
+oc get servicemonitor -n campus-p1
+oc describe servicemonitor campus-backend -n campus-p1
 ```
 
 Le résultat attendu :
@@ -170,14 +196,7 @@ Le résultat attendu :
 
 ## Étape 5 - Générer un peu d’activité métier
 
-Ouvrez la route du frontend :
-
-```powershell
-$routeHost = oc get route campus-frontend -o jsonpath='{.spec.host}'
-"https://$routeHost"
-```
-
-Dans le navigateur :
+Ouvrez la route du frontend dans le navigateur, puis :
 
 1. ouvrez l’application ;
 2. remplissez le formulaire ;
@@ -189,7 +208,19 @@ Attendez ensuite environ :
 
 Cela laisse le temps à Prometheus de scraper à nouveau le backend.
 
-![prom.png](assets/prom.png)
+Puis, ouvrez `Observe > Metrics` et saisissez la requête :
+
+```text
+campus_applications_submitted_total
+```
+Vous devriez voir une courbe avec une première valeur à `0`, puis une montée à `1` après l’envoi de votre candidature.
+
+
+![img.png](assets/p1.png)
+
+![img_1.png](assets/p2.png)
+
+
 
 ## Ce qu’il faut retenir
 

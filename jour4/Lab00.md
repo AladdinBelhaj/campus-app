@@ -1,8 +1,8 @@
-# Lab - Recréer Campus depuis la console sur un cluster OKD
+# Lab0 - Recréer Campus depuis la console sur un cluster OKD ROSA
 
 ## Objectif 
 
-Dans ce lab, vous allez recréer l'application **Campus** depuis la **console OpenShift**, sans vous appuyer sur le client `oc`.
+Dans ce lab, vous allez recréer l'application **Campus** depuis la **console OpenShift**, sans vous appuyer sur le client `oc` fait dans le lab de Sandbox.
 
 Le but est de refaire calmement toute la chaîne :
 
@@ -30,7 +30,15 @@ Avant de commencer :
 - créer un projet `campus-p1` ou `campus-p2` selon votre utilisateur ;
 - Avoir un dépôt Git distant, exemple Gitlab, public, contenant le code source de Campus. 
 
-exemple: `https://gitlab.com/rym.regaieg/okd-training.git`
+exemple: `https://mon-repo/campus-lab.git`
+
+NB. Pour des raisons de droits d’accès, il est préférable que ce dépôt soit public. Vous pouvez aussi utiliser un dépôt privé, mais il faudra alors configurer les accès dans OpenShift.
+
+![img_10.png](assets/img_10.png)
+
+le repo doit avoir la structure suivante :
+
+![img_11.png](assets/img_11.png)
 
 
 ## Point important sur la stratégie de build
@@ -48,150 +56,72 @@ Le backend et le frontend sont donc construits à partir de leurs `Dockerfile` r
 
 Dans la console :
 
-1. Créer un projet `campus` selon votre utilisateur :
+1. Créer un projet `campus-p1` ou bien `campus-p2` selon votre utilisateur :
 
-![img_6.png](img_6.png)
+![img_6.png](assets/img_6.png)
 
 2. Une fois le projet crée, cliquer sur `Workloads` puis `Add Page` :
 
-![img_7.png](img_7.png)
+![img_7.png](assets/img_7.png)
 
 3. Depuis la section `Git Repository`, cliquez sur `Import From Git` :
 
-![img_8.png](img_8.png)
+![img_8.png](assets/img_8.png)
 
 Un formulaire s'ouvre alors pour configurer la source de votre build.
 
-![img_9.png](img_9.png)
+![img_9.png](assets/img_9.png)
 
 
-4. gardez comme dépôt source : exemple: `https://gitlab.com/rym.regaieg/okd-training.git`
+### Champs à remplir
+
+| Champ            | Valeur                                   |
+| ---------------- | ---------------------------------------- |
+| Git Repo URL     | `https://mon-repo/campus-lab.git` |
+| Git reference    | `main`                                   |
+| Context dir      | `backend`                                |
+| Source Secret    | laisser vide                             |
+| Project          | `campus-p1`                              |
+| Builder Image    | ne pas utiliser                          |
+| Strategy         | `Dockerfile`                  |
+| Dockerfile path  | `Dockerfile`                             |
+| Application name | `campus`                                 |
+| Name             | `campus-backend`                         |
+| Resource type    | `Deployment`                             |
+| Target port      | `8080`                                   |
+| Create a Route   | optionnel pour backend                   |
+
+Point important
+
+Même si OpenShift détecte une image builder Java, il faut choisir l’option basée sur le Dockerfile.
+
+![img_13.png](assets/img_13.png)
+
+![img_14.png](assets/img_14.png)
 
 
-3. gardez comme branche : `main`
+Une fois le backend créée, vous pouvez aller au top-bar, puis cliquez sur `+` -> `Import from Git`.
 
-Les deux répertoires contextuels utiles sont :
+Et configurer le frontend de la même manière que le backend, en adaptant les champs necessaries.
 
-- backend :
+![img_19.png](assets/img_19.png)
 
-```text
-campus-app/backend
-```
+![img_16.png](assets/img_16.png)
 
-- frontend :
-
-```text
-campus-app/frontend
-```
-
-![img_4.png](img_4.png)
-
-![img_5.png](img_5.png)
+Une fois le frontend créé, vous devez avoir les builds et les image streams liés à votre projet, campus-backend et campus-frontend.
 
 
+> **Note importante**
+>
+> Lors de l’utilisation de **Import from Git**, OpenShift génère automatiquement les `Deployment` du frontend et du backend à partir des paramètres détectés.
+>
+> Ces déploiements permettent un démarrage rapide, mais ils restent génériques.
+>
+> Nous allons les supprimer et les recréer manuellement pour mieux contrôler leur configuration, notamment les probes, les ressources, les variables d’environnement, etc.
 
-## Étape 2 - Créer les ImageStreams
+Lors de suppression des deployments, il faut bien veiller à ne pas supprimer les `BuildConfig` et les `ImageStream` associés, sinon il faudra tout recréer.
 
-Dans `ImageStreams`, créez d'abord l'image stream du backend.
-
-### ImageStream backend
-
-```yaml
-apiVersion: image.openshift.io/v1
-kind: ImageStream
-metadata:
-  name: campus-backend
-spec:
-  lookupPolicy:
-    local: true
-```
-
-Créez ensuite l'image stream du frontend.
-
-### ImageStream frontend
-
-```yaml
-apiVersion: image.openshift.io/v1
-kind: ImageStream
-metadata:
-  name: campus-frontend
-spec:
-  lookupPolicy:
-    local: true
-```
-
-## Étape 3 - Créer les BuildConfigs depuis la console
-
-Dans `BuildConfigs`, utilisez de préférence la **Vue YAML**. Cela reste bien un travail depuis la console, mais vous gardez la main sur les paramètres importants.
-
-### BuildConfig backend
-
-```yaml
-apiVersion: build.openshift.io/v1
-kind: BuildConfig
-metadata:
-  name: campus-backend
-spec:
-  source:
-    type: Git
-    git:
-      uri: https://gitlab.com/rym.regaieg/okd-training.git
-      ref: day1-sandbox
-    contextDir: training/campus-app/backend
-  strategy:
-    type: Docker
-    dockerStrategy:
-      dockerfilePath: Dockerfile
-  output:
-    to:
-      kind: ImageStreamTag
-      name: campus-backend:latest
-```
-
-### BuildConfig frontend
-
-```yaml
-apiVersion: build.openshift.io/v1
-kind: BuildConfig
-metadata:
-  name: campus-frontend
-spec:
-  source:
-    type: Git
-    git:
-      uri: https://gitlab.com/rym.regaieg/okd-training.git
-      ref: day1-sandbox
-    contextDir: training/campus-app/frontend
-  strategy:
-    type: Docker
-    dockerStrategy:
-      dockerfilePath: Dockerfile
-  output:
-    to:
-      kind: ImageStreamTag
-      name: campus-frontend:latest
-```
-
-## Étape 4 - Lancer les builds
-
-Dans `BuildConfigs` :
-
-1. ouvrez `campus-backend` ;
-2. lancez `Start Build` ;
-3. ouvrez `campus-frontend` ;
-4. lancez `Start Build`.
-
-Ensuite, dans `Compilations`, vérifiez que :
-
-- le build backend passe en `Complete` ;
-- le build frontend passe en `Complete`.
-
-Dans `ImageStreams`, vérifiez ensuite que les tags suivants existent :
-
-- `campus-backend:latest`
-- `campus-frontend:latest`
-
-Tant que ces images n'existent pas, il ne faut pas passer au `Deployment`.
+![img_18.png](assets/img_18.png)
 
 ## Étape 5 - Créer PostgreSQL
 
@@ -454,6 +384,8 @@ spec:
     name: campus-frontend
   port:
     targetPort: http
+  tls:
+    termination: edge
 ```
 
 ## Étape 8 - Valider le fonctionnement de l'application
@@ -466,22 +398,109 @@ Dans la console :
 4. validez la candidature ;
 5. revenez dans la console pour observer les pods, les deployments, les builds et les image streams.
 
-## Ce qu'il faut retenir
+![img_20.png](assets/img_20.png)
 
-Dans ce lab, vous avez volontairement séparé :
+## Étape 9 - Limites du déploiement manuel et transition vers GitOps
 
-- la construction des images ;
-- le déploiement des workloads ;
-- l'exposition du frontend.
+### Contexte réel
 
-C'est cette séparation qui vous permet de comprendre plus clairement le rôle de chaque objet OpenShift.
+L’application Campus fonctionne désormais sur OpenShift.
 
-## Vérification
+Une correction urgente doit être appliquée sur le frontend.  
+Un administrateur se connecte à la console OpenShift et modifie directement le `Deployment`.
 
-À la fin de ce lab, vous devez pouvoir expliquer :
+Quelques jours plus tard :
 
-1. pourquoi on crée un `ImageStream` avant un `BuildConfig` ;
-2. ce que produit un `BuildConfig` ;
-3. pourquoi on attend l'image avant d'appliquer le `Deployment` ;
-4. comment le backend parle à PostgreSQL ;
-5. pourquoi seule la partie frontend est exposée par une `Route`.
+- un autre administrateur modifie les replicas ;
+- une variable d’environnement est changée manuellement ;
+- l’environnement de recette ne correspond plus à la production ;
+- personne ne sait exactement quel état est le bon.
+
+```text
+Git contient une version
+Le cluster exécute une autre version
+````
+
+On parle alors de dérive de configuration.
+
+---
+
+### Ce qu’OpenShift permet déjà avec Git
+
+OpenShift permet déjà de consommer un dépôt Git.
+
+Par exemple :
+
+#### Import applicatif depuis Git
+
+Depuis la console :
+
+```text
++Add -> Import from Git
+```
+
+Cela permet de créer automatiquement :
+
+* BuildConfig
+* ImageStream
+* Deployment
+* Service
+* Route
+
+#### Déploiement de manifests depuis Git
+
+Via CLI :
+
+```bash
+oc apply -f https://mon-repo/app.yaml
+```
+
+#### Support natif d’outils déclaratifs
+
+OpenShift supporte également :
+
+* Helm Charts
+* Operators
+* Templates
+
+---
+
+### Mais cela ne suffit pas toujours
+
+Ces mécanismes sont utiles pour déployer, mais ils ne garantissent pas que le cluster reste aligné avec Git dans le temps.
+
+Sans approche GitOps dédiée, il manque souvent :
+
+* surveillance continue du dépôt Git ;
+* comparaison entre état Git et état réel ;
+* détection automatique des dérives ;
+* correction automatique (`self-heal`) ;
+* synchronisation continue ;
+* rollback piloté par Git ;
+* gestion claire des environnements `dev`, `test`, `prod`.
+
+---
+
+### Pourquoi introduire GitOps
+
+L’objectif devient alors :
+
+```text
+Git = source de vérité
+Cluster = état synchronisé automatiquement
+```
+
+Chaque changement passe par Git :
+
+* commit ;
+* merge request ;
+* validation ;
+* synchronisation vers le cluster.
+
+---
+
+### Conclusion
+
+OpenShift sait déjà déployer depuis Git.
+
+Mais lorsque l’on veut que Git pilote durablement l’état du cluster, on introduit GitOps avec Argo CD.
