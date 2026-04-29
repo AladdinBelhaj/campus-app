@@ -1,168 +1,377 @@
-# Lab02 - Afficher les métriques Campus dans OpenShift Prometheus
+# Lab02 - GitOps et Argo CD sur OpenShift
 
-## Objectif pédagogique
+# Contexte
 
-Dans ce lab, vous allez utiliser **la vue métriques intégrée d’OpenShift** pour afficher :
+Dans le cadre d’une démonstration destinée aux équipes internes, les administrateurs de la plateforme souhaitent réaliser un **POC** (*Proof of Concept*) autour de **GitOps** avec **Argo CD** sur OpenShift.
 
-- des métriques cluster ;
-- des métriques applicatives ;
-- des métriques métier de Campus.
+L’objectif de ce POC est de montrer concrètement :
 
-Le but est volontairement simple :
+- comment une application peut être déployée depuis un dépôt Git ;
+- comment Git devient la source de vérité de la plateforme ;
+- comment Argo CD compare en permanence l’état attendu et l’état réel ;
+- comment une dérive manuelle peut être détectée puis corrigée automatiquement ;
+- comment une modification dans Git peut être propagée vers le cluster sans manipulation manuelle directe.
 
-- rester sur le chemin standard du Sandbox ;
-- utiliser `Observe > Metrics` ;
-- lire ce que Prometheus collecte déjà pour votre projet.
+---
 
-## Étape 1 - Ouvrir la vue métriques d’OpenShift
+## Application utilisée pour ce lab
 
-Dans la console OpenShift :
+Pour ce POC, vous allez déployer **Podinfo**, une petite application web de démonstration souvent utilisée dans les environnements Kubernetes et GitOps.
 
-1. passez dans la perspective **Developer** ;
-2. ouvrez `Observe` ;
-3. cliquez sur `Metrics` ;
-4. gardez votre projet Sandbox comme contexte de travail.
+Podinfo permet de visualiser rapidement :
 
-Le bon réflexe dans cette variante Sandbox est de commencer ici, parce que c’est l’outil intégré le plus simple pour un projet utilisateur.
+- qu’un déploiement fonctionne ;
+- qu’un changement Git est bien pris en compte ;
+- qu’un changement manuel dans le cluster provoque un état `OutOfSync` ;
+- qu’Argo CD peut réconcilier automatiquement l’état réel avec l’état défini dans Git.
 
-### Si `Accès limité` s’affiche
-
-Vérifiez d’abord :
-
-- que vous êtes bien dans la perspective **Developer** ;
-- que le bon projet est sélectionné ;
-- que le `ServiceMonitor` existe bien.
-
-Si le message persiste, cela signifie généralement que ce tenant Sandbox limite l’accès à cette vue.  
-Dans ce cas :
-
-- gardez tout de même `Observe > Metrics` comme chemin de référence du support ;
-- mais validez les métriques côté backend avec le port-forward du Lab 2.
-
-## Étape 2 - Lire d’abord une métrique cluster
-
-Commencez par une métrique qui parle de l’environnement d’exécution.
-
-Exemple pour le CPU du backend :
+# Principe GitOps
 
 ```text
-sum(rate(container_cpu_usage_seconds_total{namespace="<votre-projet>",pod=~"campus-backend-.*"}[5m]))
+Git = source de vérité
+Argo CD = contrôleur de synchronisation
+Cluster = état réel
 ```
 
-Exemple pour la mémoire du backend :
+---
+
+# Architecture cible
 
 ```text
-sum(container_memory_working_set_bytes{namespace="<votre-projet>",pod=~"campus-backend-.*"})
+Git Repository
+      ↓
+ Argo CD
+      ↓
+OpenShift Project
 ```
 
-Exemple pour les redémarrages :
+---
+
+# Prérequis
+
+* accès console OpenShift avec droits suffisants pour installer un Operator et créer un RoleBinding;
+* projet personnel
+* dépôt Git contenant des manifests Kubernetes/OpenShift.
+
+---
+
+# Étape 1 - Installer Argo CD depuis la console
+
+## Mission
+
+Depuis la console OpenShift :
 
 ```text
-kube_pod_container_status_restarts_total{namespace="<votre-projet>",pod=~"campus-backend-.*"}
+Software Catalog -> Rechercher : Red Hat OpenShift GitOps
 ```
 
-Le message à retenir :
+![img.png](img.png)
 
-- ces métriques parlent du **pod et du cluster** ;
-- elles ne parlent pas encore du métier Campus.
+Puis cliquer sur `Install` et suivre l’assistant d’installation.
 
-## Étape 3 - Lire ensuite une métrique applicative
+> NB.
+> ne changez rien aux options recommandées dans l’assistant d’installation,
+> gardez :
+> - latest
+> - All namespaces on the cluster
+> - openshift-gitops-operator
+> - Update approval: Automatic
+> - Console plugin: Enable
+---
 
-Passez maintenant à des métriques exposées par Spring Boot et Micrometer.
+Et attendre la fin de l’installation.
 
-Essayez par exemple :
+# Étape 2 - Vérifier l’installation
+
+Aller dans :
 
 ```text
-process_cpu_usage
+Installed Operators -> OpenShift GitOps
+```
+
+![img_1.png](img_1.png)
+
+Vérifier que l’Operator est `Succeeded`.
+
+> À ce stade, vous utilisez l’instance Argo CD par défaut créée par OpenShift GitOps dans le namespace `openshift-gitops`.
+
+Aller vers Routes, ouvrir la route `openshift-gitops-server` et accéder à l’interface web d’Argo CD.
+
+![img_2.png](img_2.png)
+
+Se connecter à l’interface web avec le compte admin.
+
+![img_3.png](img_3.png)
+
+Si on vous demande les permissions pour accéder au compte `cluster-admin` cliquez sur `Allow`.
+
+![img_4.png](img_4.png)
+
+Et vous voilà dans l’interface d’Argo CD.
+
+![img_5.png](img_5.png)
+
+---
+
+Vous pouvez ajouter un bloc **Remarque** comme ceci :
+
+---
+
+> **Remarque**
+>
+> L’instance Argo CD par défaut s’exécute dans le namespace `openshift-gitops`.
+> Si vous déployez une application dans un autre namespace, par exemple `poc-gitops-p1`, Argo CD doit disposer des autorisations nécessaires sur ce projet.
+>
+> Sans cela, la synchronisation échoue avec des erreurs de type :
+>
+> - `deployments.apps is forbidden`
+> - `services is forbidden`
+> - `routes.route.openshift.io is forbidden`
+>
+> Pour un lab, le plus simple est d’accorder le rôle `admin` au contrôleur Argo CD sur le namespace cible :
+>
+> ```powershell
+> oc adm policy add-role-to-user admin system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n poc-gitops-p1
+> ```
+>
+# Étape 5 - Préparer un repo Git simple
+
+Créer un dossier dans votre dépôt Git contenant :
+
+**Arborescence**
+```text
+poc-gitops-p1/
+├── namespace.yaml
+├── deployment.yaml
+├── service.yaml
+├── route.yaml
+└── kustomization.yaml
+```
+
+**`namespace.yaml`**
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-gitops-p1
+  labels:
+    app.kubernetes.io/part-of: poc-gitops
+```
+
+**`deployment.yaml`**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podinfo
+  namespace: poc-gitops-p1
+  labels:
+    app: podinfo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podinfo
+  template:
+    metadata:
+      labels:
+        app: podinfo
+    spec:
+      containers:
+        - name: podinfo
+          image: ghcr.io/stefanprodan/podinfo:6.7.1
+          ports:
+            - name: http
+              containerPort: 9898
+          env:
+            - name: PODINFO_UI_MESSAGE
+              value: "POC GitOps avec Argo CD sur OpenShift"
+            - name: PODINFO_UI_COLOR
+              value: "#0f766e"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+```
+
+**`service.yaml`**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: podinfo
+  namespace: poc-gitops-p1
+spec:
+  selector:
+    app: podinfo
+  ports:
+    - name: http
+      port: 9898
+      targetPort: http
+```
+
+**`route.yaml`**
+```yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: podinfo
+  namespace: poc-gitops-p1
+spec:
+  to:
+    kind: Service
+    name: podinfo
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+```
+
+**`kustomization.yaml`**
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - route.yaml
+```
+
+# Étape 6 - Créer l’application Argo CD
+
+Depuis la console Argo CD
+
+```text
+Applications -> + New App
+```
+
+Remplir :
+
+```text
+Application Name: poc-gitops-p1
+Project Name: default
+Repository URL: https://mon-repo/campus-lab.git
+revision: main
+Path: poc-gitops-p1
+Cluster-url: https://kubernetes.default.svc
+Namespace: poc-gitops-p1
+```
+
+Sync policy :
+
+```text
+Automatic
+Prune enabled
+Self Heal enabled
+```
+
+Puis cliquer sur `Create`.
+
+![img_6.png](img_6.png)
+
+---
+
+> Argo CD applique automatiquement les manifests.
+
+![img_7.png](img_7.png)
+
+Vérifier dans OpenShift :
+
+![img_9.png](img_9.png)
+
+* Deployments créés
+* Pods Running
+* Services présents
+* Routes présentes
+
+Exemple vérifie la route :
+![img_8.png](img_8.png)
+
+---
+
+# Étape 8 - Tester une dérive manuelle
+
+## Mission
+
+Depuis la console OpenShift :
+
+Modifier :
+
+```text
+podinfo replicas: 1 -> 3
+```
+
+Observer ensuite Argo CD.
+
+Résultat attendu :
+
+```text
+OutOfSync
+```
+
+![img_10.png](img_10.png)
+
+Puis Argo CD remet :
+
+```text
+replicas = 1
+```
+
+(si self-heal activé)
+
+---
+
+# Étape 9 - Modifier Git
+
+Changer dans Git :
+
+```yaml
+replicas: 3
+```
+![img_15.png](img_15.png)
+
+Commit + push.
+
+Observer :
+
+Argo CD détecte le changement puis applique :
+
+![img_13.png](img_13.png)
+
+puis 
+
+![img_16.png](img_16.png)
+
+
+![img_14.png](img_14.png)
+---
+
+---
+
+# Ce qu’il faut retenir
+
+```text
+OpenShift sait déployer.
+Argo CD sait maintenir l’état attendu.
 ```
 
 ```text
-jvm_threads_live_threads
+Sans GitOps :
+on applique des YAML
+
+Avec GitOps :
+Git applique l’infrastructure
 ```
 
-```text
-http_server_requests_seconds_count
-```
+---
 
-Ces métriques parlent de l’application elle-même :
-
-- processus Java ;
-- JVM ;
-- trafic HTTP.
-
-## Étape 4 - Lire les métriques métier Campus
-
-Passez maintenant aux métriques métier du backend.
-
-Testez :
-
-```text
-campus_applications_submitted_total
-```
-
-```text
-campus_published_offers
-```
-
-```text
-campus_pending_applications
-```
-
-```text
-campus_applications_by_domain_total
-```
-
-Ce sont les métriques les plus intéressantes pour le fil rouge, car elles répondent directement à des questions métier :
-
-- combien de candidatures ont été envoyées ?
-- combien d’offres sont publiées ?
-- combien de candidatures restent en attente ?
-- sur quels domaines les candidatures se répartissent-elles ?
-
-## Étape 5 - Relier le scénario métier aux courbes
-
-Pour voir les métriques évoluer :
-
-1. revenez dans le frontend ;
-2. envoyez une nouvelle candidature ;
-3. revenez dans `Observe > Metrics` ;
-4. relancez les requêtes.
-
-Ce que vous devez voir :
-
-- `campus_applications_submitted_total` augmente ;
-- `campus_pending_applications` peut évoluer ;
-- `campus_applications_by_domain_total` évolue selon l’offre choisie.
-
-Si une requête reste vide au premier essai :
-
-- attendez 30 à 60 secondes ;
-- relancez la requête ;
-- vérifiez que le `ServiceMonitor` existe bien.
-
-## Étape 6 - Interpréter correctement ce que vous observez
-
-Vous devez maintenant distinguer trois familles :
-
-- **métriques cluster** : CPU, mémoire, état des pods, redémarrages ;
-- **métriques applicatives** : JVM, process, trafic HTTP ;
-- **métriques métier** : candidatures, offres, répartition par domaine.
-
-Cette distinction est essentielle, car une bonne exploitation ne repose pas sur un seul type de signal.
-
-## Ce qu’il faut retenir
-
-Le résultat attendu de ce Jour 4 Sandbox est simple :
-
-- vous savez afficher une courbe Prometheus dans OpenShift ;
-- vous savez faire la différence entre infrastructure, application et métier ;
-- vous savez montrer les métriques propres à Campus dans la console OpenShift.
-
-## Vérification
-
-À la fin de ce lab, vous devez pouvoir :
-
-1. afficher une métrique cluster du backend ;
-2. afficher une métrique Spring Boot ou JVM ;
-3. afficher une métrique métier `campus_*` ;
-4. expliquer pourquoi ces trois familles ne racontent pas la même chose.
+# Bonus- Redéployer l'application campus avec ArgoCD ⭐

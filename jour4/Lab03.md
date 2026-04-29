@@ -1,429 +1,168 @@
-# Lab03 - Supervision avec Grafana
+# Lab02 - Afficher les métriques Campus dans OpenShift Prometheus
 
-## Objectif
+## Objectif pédagogique
 
-Dans ce lab, vous allez construire pas a pas une chaine simple et lisible :
+Dans ce lab, vous allez utiliser **la vue métriques intégrée d’OpenShift** pour afficher :
 
-- installer `Grafana Operator` depuis le Marketplace Openshift (OperatorHub) ;
-- créer une instance `Grafana` dans le projet `campus` ;
-- Configurer `Grafana` avec une datasource Prometheus ;
-- importer un dashboard et exploiter les métriques. ;
+- des métriques cluster ;
+- des métriques applicatives ;
+- des métriques métier de Campus.
 
-## Ce que vous allez creer
+Le but est volontairement simple :
 
-Vous allez creer :
+- rester sur le chemin standard du Sandbox ;
+- utiliser `Observe > Metrics` ;
+- lire ce que Prometheus collecte déjà pour votre projet.
 
-- un `ConfigMap` `cluster-monitoring-config` dans `openshift-monitoring` ;
-- un `ServiceAccount` nomme `grafana-sa` ;
-- une instance `Grafana` nommee `grafana` dans le namespace `campus` ;
-- un `ServiceMonitor` `campus-backend` dans `campus` ;
-- un `ClusterRoleBinding` pour autoriser la lecture des metriques cluster ;
-- une `Route` vers le service `grafana-service` ;
-- une datasource Grafana vers `thanos-querier` ;
-- un dashboard `API Performance Dashboard` importe depuis Grafana.com.
-
-## Prerequis
-
-Avant de commencer :
-
-- le cluster OKD single-node doit etre operationnel ;
-- le projet `campus` doit exister ;
-- l'application Campus doit deja etre deployee ;
-- vous devez pouvoir ouvrir la console via Firefox et le proxy SOCKS ;
-- `oc` doit etre disponible sur votre poste ou sur le bastion ;
-- l'operateur `Grafana Operator` doit etre installable depuis `OperatorHub`.
-
-Le backend Campus doit aussi exposer :
-
-```text
-/actuator/prometheus
-```
-
-## Etape 1 - Installer Grafana Operator
-
-Dans la console :
-
-1. ouvrez `Administrator > Operators > OperatorHub` ;
-2. cherchez `Grafana Operator` ;
-3. cliquez sur `Install` ;
-4. gardez l'installation dans `openshift-operators` ;
-5. attendez que le statut passe a `Succeeded`.
-
-## Etape 2 - Activer le user workload monitoring
-
-Sans cette étape, Prometheus ne scrape pas les applications du namespace `campus`.
-
-Dans la console :
-
-1. ouvrez `Administrator` ;
-2. cliquez sur le `+` ;
-3. choisissez `Import YAML` ;
-4. collez ce `ConfigMap` ;
-5. creez la ressource dans le namespace `openshift-monitoring`.
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cluster-monitoring-config
-  namespace: openshift-monitoring
-data:
-  config.yaml: |
-    enableUserWorkload: true
-```
-
-Ensuite, attendez quelques minutes et verifiez :
-
-- le namespace `openshift-user-workload-monitoring` est present ou reste present ;
-- surtout, des pods y demarrent et passent en `Running`.
-
-Point important :
-
-- sur certaines versions, le namespace `openshift-user-workload-monitoring` existe deja avant l'activation ;
-
-## Etape 3 - Creer le ServiceAccount Grafana
-
-Dans `Importer un YAML`, creez ce `ServiceAccount` :
-
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: grafana-sa
-  namespace: campus
-```
-
-Pourquoi il est utile :
-
-- il sera attache au pod Grafana ;
-- il nous servira a generer un token propre pour acceder a `thanos-querier`.
-
-## Etape 4 - Creer l'instance Grafana
-
-Dans `Installed Operators > Grafana Operator > Grafana > Create instance`, utilisez la `Vue YAML` et collez :
-
-```yaml
-apiVersion: grafana.integreatly.org/v1beta1
-kind: Grafana
-metadata:
-  name: grafana
-  namespace: campus
-spec:
-  config:
-    log:
-      mode: console
-    auth:
-      disable_login_form: "false"
-      disable_signout_menu: "false"
-    security:
-      admin_user: admin
-      admin_password: admin123
-  deployment:
-    spec:
-      template:
-        spec:
-          serviceAccountName: grafana-sa
-          containers:
-            - name: grafana
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 256Mi
-                limits:
-                  cpu: 300m
-                  memory: 512Mi
-```
-
-Ensuite, verifiez :
-
-- la ressource `Grafana` passe au statut `Ready` ;
-- un pod Grafana est cree dans `campus` ;
-- le service `grafana-service` apparait.
-
-## Etape 5 - Autoriser Grafana a lire les metriques cluster
-
-Dans `Importer un YAML`, creez ce `ClusterRoleBinding` :
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: grafana-sa-cluster-monitoring-view
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-monitoring-view
-subjects:
-  - kind: ServiceAccount
-    name: grafana-sa
-    namespace: campus
-```
-
-### Pourquoi il est nécessaire :
-
-* Grafana ne lit pas directement les métriques depuis Prometheus, mais passe par le composant `thanos-querier`, qui centralise et expose les métriques du cluster ;
-* `thanos-querier` est accessible via le port `9091` et applique des règles de sécurité strictes basées sur les rôles Kubernetes ;
-* l’accès en lecture aux métriques est protégé par le rôle `cluster-monitoring-view`, qui autorise uniquement la consultation des données de monitoring ;
-* en liant ce rôle au `ServiceAccount` utilisé par Grafana (`grafana-sa`), on permet à Grafana d’interroger `thanos-querier` et de récupérer les métriques nécessaires à l’affichage des dashboards ;
-* sans ce `ClusterRoleBinding`, les requêtes de Grafana vers `thanos-querier` sont refusées, ce qui empêche l’affichage des données dans les panels.
-
-## Etape 6 - Creer le ServiceMonitor du backend Campus
-
-Maintenant que le monitoring des user workloads est active, il faut indiquer quoi scraper.
-
-Dans `Import YAML`, dans le namespace `campus`, collez :
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: campus-backend
-  namespace: campus
-  labels:
-    release: user-workload
-spec:
-  selector:
-    matchLabels:
-      app: campus-backend
-  endpoints:
-    - port: http
-      interval: 30s
-      path: /actuator/prometheus
-```
-
-Ce que fait ce `ServiceMonitor` :
-
-- il cible le `Service` `campus-backend` ;
-- il scrape le port `http` ;
-- il lit le path `/actuator/prometheus` toutes les `30s`.
-
-Point important :
-
-- le `ServiceMonitor` seul ne suffit pas ;
-- il faut aussi `enableUserWorkload: true`.
-
-## Etape 7 - Verifier que les metriques applicatives sont visibles
+## Étape 1 - Ouvrir la vue métriques d’OpenShift
 
 Dans la console OpenShift :
 
-1. ouvrez `Observe > Metrics` ;
-2. gardez le projet `campus` ;
-3. lancez une requete PromQL simple :
+1. passez dans la perspective **Developer** ;
+2. ouvrez `Observe` ;
+3. cliquez sur `Metrics` ;
+4. gardez votre projet Sandbox comme contexte de travail.
 
-```promql
+Le bon réflexe dans cette variante Sandbox est de commencer ici, parce que c’est l’outil intégré le plus simple pour un projet utilisateur.
+
+### Si `Accès limité` s’affiche
+
+Vérifiez d’abord :
+
+- que vous êtes bien dans la perspective **Developer** ;
+- que le bon projet est sélectionné ;
+- que le `ServiceMonitor` existe bien.
+
+Si le message persiste, cela signifie généralement que ce tenant Sandbox limite l’accès à cette vue.  
+Dans ce cas :
+
+- gardez tout de même `Observe > Metrics` comme chemin de référence du support ;
+- mais validez les métriques côté backend avec le port-forward du Lab 2.
+
+## Étape 2 - Lire d’abord une métrique cluster
+
+Commencez par une métrique qui parle de l’environnement d’exécution.
+
+Exemple pour le CPU du backend :
+
+```text
+sum(rate(container_cpu_usage_seconds_total{namespace="<votre-projet>",pod=~"campus-backend-.*"}[5m]))
+```
+
+Exemple pour la mémoire du backend :
+
+```text
+sum(container_memory_working_set_bytes{namespace="<votre-projet>",pod=~"campus-backend-.*"})
+```
+
+Exemple pour les redémarrages :
+
+```text
+kube_pod_container_status_restarts_total{namespace="<votre-projet>",pod=~"campus-backend-.*"}
+```
+
+Le message à retenir :
+
+- ces métriques parlent du **pod et du cluster** ;
+- elles ne parlent pas encore du métier Campus.
+
+## Étape 3 - Lire ensuite une métrique applicative
+
+Passez maintenant à des métriques exposées par Spring Boot et Micrometer.
+
+Essayez par exemple :
+
+```text
+process_cpu_usage
+```
+
+```text
+jvm_threads_live_threads
+```
+
+```text
+http_server_requests_seconds_count
+```
+
+Ces métriques parlent de l’application elle-même :
+
+- processus Java ;
+- JVM ;
+- trafic HTTP.
+
+## Étape 4 - Lire les métriques métier Campus
+
+Passez maintenant aux métriques métier du backend.
+
+Testez :
+
+```text
+campus_applications_submitted_total
+```
+
+```text
 campus_published_offers
 ```
 
-Puis testez aussi :
-
-```promql
+```text
 campus_pending_applications
 ```
 
-Si vous n'avez encore aucune donnee :
-
-- attendez 1 a 2 minutes ;
-- verifiez les pods dans `openshift-user-workload-monitoring` ;
-- verifiez que `campus-backend` repond toujours sur `/actuator/prometheus`.
-
-## Etape 8 - Exposer Grafana avec une Route
-
-Le service `grafana-service` est cree par l'operateur. Il faut maintenant creer une route.
-
-Dans `Routes > Create Route` ou `Importer un YAML`, utilisez :
-
-```yaml
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: grafana
-  namespace: campus
-spec:
-  to:
-    kind: Service
-    name: grafana-service
-  port:
-    targetPort: grafana
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-```
-
-Point important :
-
-- le `targetPort` doit etre **`grafana`** ;
-- si vous mettez `http`, la route peut exister mais ne pointer vers aucun endpoint valide.
-
-## Etape 9 - Ouvrir Grafana
-
-Ouvrez ensuite l'URL de la route.
-
-Exemple de forme attendue :
-
 ```text
-https://grafana-campus.apps.okdsno.okd.internal
+campus_applications_by_domain_total
 ```
 
-Connectez-vous avec :
+Ce sont les métriques les plus intéressantes pour le fil rouge, car elles répondent directement à des questions métier :
 
-- `username` : `admin`
-- `password` : `admin123`
+- combien de candidatures ont été envoyées ?
+- combien d’offres sont publiées ?
+- combien de candidatures restent en attente ?
+- sur quels domaines les candidatures se répartissent-elles ?
 
-Si la route renvoie `Application is not available`, verifiez :
+## Étape 5 - Relier le scénario métier aux courbes
 
-- que le pod Grafana est `Running` ;
-- que `grafana-service` existe ;
-- que la route pointe bien vers `targetPort: grafana`.
+Pour voir les métriques évoluer :
 
-## Etape 10 - Generer le token de grafana-sa
+1. revenez dans le frontend ;
+2. envoyez une nouvelle candidature ;
+3. revenez dans `Observe > Metrics` ;
+4. relancez les requêtes.
 
-La datasource va envoyer un header `Authorization: Bearer <token>` vers `thanos-querier`.
+Ce que vous devez voir :
 
-Generez le token avec :
+- `campus_applications_submitted_total` augmente ;
+- `campus_pending_applications` peut évoluer ;
+- `campus_applications_by_domain_total` évolue selon l’offre choisie.
 
-```powershell
-ssh -i "$env:USERPROFILE\.ssh\id_ed25519_okd" ec2-user@3.253.104.226 "KUBECONFIG=/home/ec2-user/okd-aws/install/okdsno/auth/kubeconfig oc create token grafana-sa -n campus"
-```
+Si une requête reste vide au premier essai :
 
+- attendez 30 à 60 secondes ;
+- relancez la requête ;
+- vérifiez que le `ServiceMonitor` existe bien.
 
-Point important :
+## Étape 6 - Interpréter correctement ce que vous observez
 
-- le token doit etre colle sur **une seule ligne** ;
-- ne copiez pas le token depuis un chat ou un document qui casse les lignes.
+Vous devez maintenant distinguer trois familles :
 
-## Etape 11 - Configurer la datasource dans l'UI Grafana
+- **métriques cluster** : CPU, mémoire, état des pods, redémarrages ;
+- **métriques applicatives** : JVM, process, trafic HTTP ;
+- **métriques métier** : candidatures, offres, répartition par domaine.
 
-Dans Grafana :
+Cette distinction est essentielle, car une bonne exploitation ne repose pas sur un seul type de signal.
 
-1. ouvrez `Connections` ;
-2. cliquez `Add new connection` ;
-3. cherchez `Prometheus` ;
-4. cliquez `Add new data source`.
+## Ce qu’il faut retenir
 
-![img.png](assets/img.png)
+Le résultat attendu de ce Jour 4 Sandbox est simple :
 
-![img_1.png](assets/img_1.png)
+- vous savez afficher une courbe Prometheus dans OpenShift ;
+- vous savez faire la différence entre infrastructure, application et métier ;
+- vous savez montrer les métriques propres à Campus dans la console OpenShift.
 
-Remplissez ensuite les champs comme suit :
+## Vérification
 
-- `Name` : `openshift-thanos`
-- `Prometheus server URL` :
+À la fin de ce lab, vous devez pouvoir :
 
-```text
-https://thanos-querier.openshift-monitoring.svc:9091
-```
-
-- `Authentication method` : `No Authentication`
-- `Skip TLS certificate validation` : active
-
-Dans `HTTP headers` :
-
-- `Header` :
-
-```text
-Authorization
-```
-
-- `Value` :
-
-```text
-Bearer <TOKEN_GENERE_AVEC_OC_CREATE_TOKEN>
-```
-
-Ensuite, cliquez sur `Save & test`.
-
-Ce que vous devez obtenir :
-
-- un message de succes ;
-
-## Etape 12 - Importer le dashboard API Performance Dashboard
-
-Maintenant que la datasource fonctionne, vous pouvez importer un dashboard pret a l'emploi depuis le catalogue Grafana.
-
-Dashboard a utiliser :
-
-- `ID` : `23520`
-- `Nom` : `API Performance Dashboard`
-- `Lien` : [Grafana.com - API Performance Dashboard](https://grafana.com/grafana/dashboards/23520-api-performance-dashboard/)
-
-Grafana Labs le presente comme un dashboard utilisant la datasource Prometheus et des panneaux `barchart` et `timeseries`.
-
-Dans Grafana :
-
-1. ouvrez `Dashboards` ;
-2. cliquez `New` ;
-3. cliquez `Import` ;
-4. dans le champ d'import, saisissez :
-
-```text
-23520
-```
-
-5. cliquez `Load` ;
-6. choisissez la datasource :
-
-```text
-openshift-thanos
-```
-
-7. cliquez `Import`.
-
-## Etape 13 - Generer un peu de trafic applicatif
-
-Pour que le dashboard soit parlant, il faut generer quelques requetes HTTP sur l'application.
-
-Exemples simples :
-
-- ouvrir le frontend Campus ;
-- naviguer sur les ecrans de dashboard, stages, departements et candidatures ;
-- recharger plusieurs fois la page ;
-- appeler directement quelques endpoints backend si besoin.
-
-L'objectif est de faire remonter des metriques basees sur :
-
-```text
-http_server_requests_seconds
-```
-
-## Etape 14 - Obtenir le rendu attendu
-
-Apres quelques minutes, le dashboard importe doit montrer un resultat proche de :
-
-- `Top 10 Slowest APIs (Avg Latency)` ;
-- `Top 5 Busiest APIs (RPS)` ;
-- `Top 10 Longest Requests (Max Latency)` ;
-- `Total RPS`.
-
-Le rendu final attendu est le type de vue visible dans votre capture :
-
-- des bar charts sur les endpoints les plus lents ;
-- des bar charts sur les endpoints les plus sollicites ;
-- une courbe de debit global ;
-- des donnees qui evoluent quand vous generez du trafic.
-
-## Etape 15 - Option de secours si le dashboard importe ne montre rien
-
-Si le dashboard `23520` s'importe mais reste vide :
-
-1. verifiez d'abord que la datasource `openshift-thanos` est bien `OK` ;
-2. verifiez ensuite dans `Explore` qu'une requete simple repond :
-
-```promql
-sum(rate(http_server_requests_seconds_count{application="campus-backend"}[5m]))
-```
-
-3. verifiez aussi :
-
-```promql
-rate(http_server_requests_seconds_sum{application="campus-backend"}[5m])
-```
-
-Si ces requetes retournent bien des series :
-
-- le scrape est bon ;
-- la datasource est bonne ;
-- il faut alors surtout generer davantage de trafic ou ajuster la plage temporelle du dashboard.
-
-![prometheus.png](assets/prometheus.png)
-
-![grf.png](assets/grf.png)
+1. afficher une métrique cluster du backend ;
+2. afficher une métrique Spring Boot ou JVM ;
+3. afficher une métrique métier `campus_*` ;
+4. expliquer pourquoi ces trois familles ne racontent pas la même chose.
