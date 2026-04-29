@@ -65,7 +65,7 @@ Depuis la console OpenShift :
 Software Catalog -> Rechercher : Red Hat OpenShift GitOps
 ```
 
-![img.png](img.png)
+![img.png](assets/osargo1.png)
 
 Puis cliquer sur `Install` et suivre l’assistant d’installation.
 
@@ -89,7 +89,7 @@ Aller dans :
 Installed Operators -> OpenShift GitOps
 ```
 
-![img_1.png](img_1.png)
+![img_1.png](assets/osargo2.png)
 
 Vérifier que l’Operator est `Succeeded`.
 
@@ -97,19 +97,19 @@ Vérifier que l’Operator est `Succeeded`.
 
 Aller vers Routes, ouvrir la route `openshift-gitops-server` et accéder à l’interface web d’Argo CD.
 
-![img_2.png](img_2.png)
+![img_2.png](assets/osargo3.png)
 
 Se connecter à l’interface web avec le compte admin.
 
-![img_3.png](img_3.png)
+![img_3.png](assets/osargo4.png)
 
 Si on vous demande les permissions pour accéder au compte `cluster-admin` cliquez sur `Allow`.
 
-![img_4.png](img_4.png)
+![img_4.png](assets/osargo5.png)
 
 Et vous voilà dans l’interface d’Argo CD.
 
-![img_5.png](img_5.png)
+![img_5.png](assets/osargo6.png)
 
 ---
 
@@ -276,17 +276,17 @@ Self Heal enabled
 
 Puis cliquer sur `Create`.
 
-![img_6.png](img_6.png)
+![img_6.png](assets/osargo7.png)
 
 ---
 
 > Argo CD applique automatiquement les manifests.
 
-![img_7.png](img_7.png)
+![img_7.png](assets/osargo7.png)
 
 Vérifier dans OpenShift :
 
-![img_9.png](img_9.png)
+![img_9.png](assets/osargo8.png)
 
 * Deployments créés
 * Pods Running
@@ -294,7 +294,7 @@ Vérifier dans OpenShift :
 * Routes présentes
 
 Exemple vérifie la route :
-![img_8.png](img_8.png)
+![img_8.png](assets/osargo9.png)
 
 ---
 
@@ -318,7 +318,7 @@ Résultat attendu :
 OutOfSync
 ```
 
-![img_10.png](img_10.png)
+![img_10.png](assets/osargo11.png)
 
 Puis Argo CD remet :
 
@@ -337,7 +337,9 @@ Changer dans Git :
 ```yaml
 replicas: 3
 ```
-![img_15.png](img_15.png)
+![img_13.png](assets/osargo16.png)
+
+![img_15.png](assets/osargo11.png)
 
 Commit + push.
 
@@ -345,14 +347,15 @@ Observer :
 
 Argo CD détecte le changement puis applique :
 
-![img_13.png](img_13.png)
 
 puis 
 
-![img_16.png](img_16.png)
+
+![img_16.png](assets/osargo17.png)
+
+![img_16.png](assets/osargo15.png)
 
 
-![img_14.png](img_14.png)
 ---
 
 ---
