@@ -111,11 +111,6 @@ Et vous voilà dans l’interface d’Argo CD.
 
 ![img_5.png](assets/osargo6.png)
 
----
-
-Vous pouvez ajouter un bloc **Remarque** comme ceci :
-
----
 
 > **Remarque**
 >

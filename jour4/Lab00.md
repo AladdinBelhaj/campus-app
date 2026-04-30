@@ -113,9 +113,9 @@ Une fois le frontend créé, vous devez avoir les builds et les image streams li
 
 > **Note importante**
 >
-> Lors de l’utilisation de **Import from Git**, OpenShift génère automatiquement les `Deployment` du frontend et du backend à partir des paramètres détectés.
+> Lors de l’utilisation de **Import from Git**, OpenShift génère automatiquement les `Deployment` et les ressources (services, routes,.. ) du frontend et du backend à partir des paramètres détectés.
 >
-> Ces déploiements permettent un démarrage rapide, mais ils restent génériques.
+> Ces ressources permettent un démarrage rapide, mais ils restent génériques.
 >
 > Nous allons les supprimer et les recréer manuellement pour mieux contrôler leur configuration, notamment les probes, les ressources, les variables d’environnement, etc.
 

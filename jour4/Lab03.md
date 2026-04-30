@@ -1,6 +1,6 @@
-# Lab02 - Afficher les métriques Campus dans OpenShift Prometheus
+# Lab03 - Afficher les métriques Campus dans OpenShift Prometheus
 
-## Objectif pédagogique
+## Objectif
 
 Dans ce lab, vous allez utiliser **la vue métriques intégrée d’OpenShift** pour afficher :
 
@@ -150,13 +150,6 @@ Vous devez maintenant distinguer trois familles :
 
 Cette distinction est essentielle, car une bonne exploitation ne repose pas sur un seul type de signal.
 
-## Ce qu’il faut retenir
-
-Le résultat attendu de ce Jour 4 Sandbox est simple :
-
-- vous savez afficher une courbe Prometheus dans OpenShift ;
-- vous savez faire la différence entre infrastructure, application et métier ;
-- vous savez montrer les métriques propres à Campus dans la console OpenShift.
 
 ## Vérification
 
