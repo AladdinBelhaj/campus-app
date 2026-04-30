@@ -4,12 +4,12 @@
 
 Dans ce lab, vous allez construire pas a pas une chaine simple et lisible :
 
-- installer `Grafana Operator` depuis le Marketplace Openshift (OperatorHub) ;
-- créer une instance `Grafana` dans le projet `campus` ;
+- installer `Grafana Operator` depuis le Marketplace Openshift (Software Catalog) ;
+- créer une instance `Grafana` dans le projet `campus-p1` ( ou `campus-p2` selon votre projet) ;
 - Configurer `Grafana` avec une datasource Prometheus ;
 - importer un dashboard et exploiter les métriques. ;
 
-## Ce que vous allez creer
+## Ce que vous allez créer
 
 Vous allez créer :
 
@@ -42,11 +42,12 @@ Le backend Campus doit aussi exposer :
 
 Dans la console :
 
-1. ouvrez `Administrator > Operators > OperatorHub` ;
+1. ouvrez `Software Catalog` ;
 2. cherchez `Grafana Operator` ;
 3. cliquez sur `Install` ;
 4. gardez l'installation dans `openshift-operators` ;
-5. attendez que le statut passe a `Succeeded`.
+5. ne changez pas les autres options d'installation recommandées ;
+6. attendez que le statut passe a `Succeeded`.
 
 ## Etape 2 - Activer le user workload monitoring
 
@@ -58,23 +59,10 @@ Dans la console :
 2. cliquez sur le `+` ;
 3. choisissez `Import YAML` ;
 4. collez ce `ConfigMap` ;
-5. creez la ressource dans le namespace `openshift-monitoring`.
+5. créez la ressource dans le namespace `openshift-monitoring`.
 
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cluster-monitoring-config
-  namespace: openshift-monitoring
-data:
-  config.yaml: |
-    enableUserWorkload: true
-```
-
-Ensuite, attendez quelques minutes et verifiez :
-
-- le namespace `openshift-user-workload-monitoring` est present ou reste present ;
-- surtout, des pods y demarrent et passent en `Running`.
+- le namespace `openshift-user-workload-monitoring` est present. ;
+- surtout, des pods y démarrent et passent en `Running`.
 
 Point important :
 
@@ -82,20 +70,22 @@ Point important :
 
 ## Etape 3 - Créer le ServiceAccount Grafana
 
-Dans `Importer un YAML`, creez ce `ServiceAccount` :
+Grafana a besoin d'un `ServiceAccount` pour fonctionner. 
+Il est recommandé d'en créer un dédié pour Grafana, afin de lui attribuer des permissions spécifiques et de suivre les bonnes pratiques de sécurité.
+Dans `Importer un YAML`, créez ce `ServiceAccount` (selon le namespace de votre projet) :
 
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: grafana-sa
-  namespace: campus
+  namespace: campus-p1
 ```
 
 Pourquoi il est utile :
 
 - il sera attache au pod Grafana ;
-- il nous servira a generer un token propre pour acceder a `thanos-querier`.
+- il nous servira à générer un token propre pour accéder à `thanos-querier` qui expose les métriques Prometheus du cluster.
 
 ## Etape 4 - Créer l'instance Grafana
 
@@ -106,7 +96,7 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: Grafana
 metadata:
   name: grafana
-  namespace: campus
+  namespace: campus-p1
 spec:
   config:
     log:
@@ -136,7 +126,7 @@ spec:
 Ensuite, vérifiez :
 
 - la ressource `Grafana` passe au statut `Ready` ;
-- un pod Grafana est cree dans `campus` ;
+- un pod Grafana est créée dans `campus-p1` ;
 - le service `grafana-service` apparait.
 
 ## Etape 5 - Autoriser Grafana a lire les metriques cluster
@@ -208,7 +198,7 @@ Connectez-vous avec :
 
 La datasource va envoyer un header `Authorization: Bearer <token>` vers `thanos-querier`.
 
-Generez le token avec :
+Générez le token avec :
 
 ```powershell
 ssh -i "$env:USERPROFILE\.ssh\id_ed25519_okd" ec2-user@3.253.104.226 "KUBECONFIG=/home/ec2-user/okd-aws/install/okdsno/auth/kubeconfig oc create token grafana-sa -n campus"

@@ -150,7 +150,7 @@ kind: Namespace
 metadata:
   name: poc-gitops-p1
   labels:
-    app.kubernetes.io/part-of: poc-gitops
+    app.kubernetes.io/part-of: poc-gitops-p1
 ```
 
 **`deployment.yaml`**
@@ -279,9 +279,11 @@ Puis cliquer sur `Create`.
 
 ![img_7.png](assets/osargo7.png)
 
-Vérifier dans OpenShift :
 
 ![img_9.png](assets/osargo8.png)
+
+
+Vérifier dans OpenShift :
 
 * Deployments créés
 * Pods Running
