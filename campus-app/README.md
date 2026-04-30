@@ -188,15 +188,6 @@ oc start-build campus-backend --from-dir=training/campus-app/backend --follow -n
 oc start-build campus-frontend --from-dir=training/campus-app/frontend --follow -n "$TRAINING_NAMESPACE"
 ```
 
-### Variante Developer Sandbox
-
-Depuis votre poste local, une fois connecté avec `oc login` :
-
-```powershell
-oc apply -k .\training\labs\jour-1-sandbox\correction\sandbox-base
-oc start-build campus-backend --from-dir=.\training\campus-app\backend --follow
-oc start-build campus-frontend --from-dir=.\training\campus-app\frontend --follow
-```
 
 ## Accès fonctionnels
 
