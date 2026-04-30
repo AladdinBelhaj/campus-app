@@ -231,10 +231,10 @@ Le nom attendu est :
 CampusBackendUnavailable
 ```
 
-![img.png](alert2.png)
+![img.png](assets/alert2.png)
 
 
-![img.png](alert3.png)
+![img.png](assets/alert3.png)
 
 ## Étape 6 - Résoudre l'alerte
 
@@ -321,7 +321,7 @@ Le principe est le suivant :
 
 Récupérez l'URL unique de `webhook.site` et collez-la dans le `Secret` que vous allez créer.
 
-![img.png](alert4.png)
+![img.png](assets/alert4.png)
 
 Exemple pour `campus-p1` :
 
@@ -366,9 +366,9 @@ Résultat attendu :
 
 - quand l'alerte passe en `Firing`, une requete HTTP est envoyee vers `webhook.site` ;
 
-![img.png](alert5.png)
+![img.png](assets/alert5.png)
 
 - quand l'alerte revient a l'état normal, une notification `Resolved` est également envoyée (environ 3 min)
 
-![img_1.png](alert6.png)
+![img_1.png](assets/alert6.png)
 

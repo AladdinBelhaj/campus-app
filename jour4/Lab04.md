@@ -13,10 +13,7 @@ Dans ce lab, vous allez construire pas a pas une chaine simple et lisible :
 
 Vous allez créer :
 
-- un `ConfigMap` `cluster-monitoring-config` dans `openshift-monitoring` ;
-- un `ServiceAccount` nomme `grafana-sa` ;
 - une instance `Grafana` nommée `grafana` dans le namespace `campus` ;
-- un `ServiceMonitor` `campus-backend` dans `campus` ;
 - un `ClusterRoleBinding` pour autoriser la lecture des métriques cluster ;
 - une `Route` vers le service `grafana-service` ;
 - une datasource Grafana vers `thanos-querier` ;
@@ -27,10 +24,11 @@ Vous allez créer :
 Avant de commencer :
 
 * un cluster opérationnel ;
-* le projet `campus` doit exister ;
+* le projet `campus-p1` ( ou p2 ) doit exister ;
+* ServiceMonitor configuré pour scraper le backend Campus;
 * l'application Campus doit déjà être déployée ;
-* `oc` doit être disponible sur votre poste ou sur le bastion ;
-* l'opérateur Grafana Operator doit être installable depuis `OperatorHub`.
+* `oc` doit être disponible sur votre poste ;
+* l'opérateur Grafana Operator doit être installable depuis `Software Catalog`.
 
 Le backend Campus doit aussi exposer :
 
@@ -61,35 +59,11 @@ Dans la console :
 4. collez ce `ConfigMap` ;
 5. créez la ressource dans le namespace `openshift-monitoring`.
 
-- le namespace `openshift-user-workload-monitoring` est present. ;
-- surtout, des pods y démarrent et passent en `Running`.
-
-Point important :
-
-- sur certaines versions, le namespace `openshift-user-workload-monitoring` existe deja avant l'activation ;
-
-## Etape 3 - Créer le ServiceAccount Grafana
-
-Grafana a besoin d'un `ServiceAccount` pour fonctionner. 
-Il est recommandé d'en créer un dédié pour Grafana, afin de lui attribuer des permissions spécifiques et de suivre les bonnes pratiques de sécurité.
-Dans `Importer un YAML`, créez ce `ServiceAccount` (selon le namespace de votre projet) :
-
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: grafana-sa
-  namespace: campus-p1
-```
-
-Pourquoi il est utile :
-
-- il sera attache au pod Grafana ;
-- il nous servira à générer un token propre pour accéder à `thanos-querier` qui expose les métriques Prometheus du cluster.
-
-## Etape 4 - Créer l'instance Grafana
+## Etape 3 - Créer l'instance Grafana
 
 Dans `Installed Operators > Grafana Operator > Grafana > Create instance`, utilisez la `Vue YAML` et collez :
+
+![img_15.png](assets/log/img_15.png)
 
 ```yaml
 apiVersion: grafana.integreatly.org/v1beta1
@@ -129,9 +103,9 @@ Ensuite, vérifiez :
 - un pod Grafana est créée dans `campus-p1` ;
 - le service `grafana-service` apparait.
 
-## Etape 5 - Autoriser Grafana a lire les metriques cluster
+## Etape 5 - Autoriser Grafana à lire les métriques cluster
 
-Dans `Importer un YAML`, créez ce `ClusterRoleBinding` :
+Dans `Importer un YAML`, créez ce `ClusterRoleBinding`.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -145,7 +119,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: grafana-sa
-    namespace: campus
+    namespace: campus-p1
 ```
 
 ### Pourquoi il est nécessaire :
@@ -167,7 +141,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: grafana
-  namespace: campus
+  namespace: campus-p1
 spec:
   to:
     kind: Service
@@ -179,14 +153,11 @@ spec:
     insecureEdgeTerminationPolicy: Redirect
 ```
 
-Point important :
-
-- le `targetPort` doit etre **`grafana`** ;
-- si vous mettez `http`, la route peut exister mais ne pointer vers aucun endpoint valide.
-
 ## Etape 7 - Ouvrir Grafana
 
 Ouvrez ensuite l'URL de la route.
+
+![img.png](assets/grf1.png)
 
 Connectez-vous avec :
 
@@ -196,12 +167,21 @@ Connectez-vous avec :
 
 ## Etape 8 - Générer le token de grafana-sa
 
+![img_1.png](assets/grf1.png)
+
+![img_2.png](assets/grf2.png)
+
+![img_3.png](assets/grf3.png)
+
+![img_4.png](assets/grf4.png)
+
+
 La datasource va envoyer un header `Authorization: Bearer <token>` vers `thanos-querier`.
 
 Générez le token avec :
 
 ```powershell
-ssh -i "$env:USERPROFILE\.ssh\id_ed25519_okd" ec2-user@3.253.104.226 "KUBECONFIG=/home/ec2-user/okd-aws/install/okdsno/auth/kubeconfig oc create token grafana-sa -n campus"
+oc create token grafana-sa -n campus-p1
 ```
 
 
@@ -219,18 +199,19 @@ Dans Grafana :
 3. cherchez `Prometheus` ;
 4. cliquez `Add new data source`.
 
-![img.png](assets/img.png)
-
-![img_1.png](assets/img_1.png)
 
 Remplissez ensuite les champs comme suit :
 
-- `Name` : `openshift-thanos`
+- `Name` : `prometheus-1`
 - `Prometheus server URL` :
 
 ```text
 https://thanos-querier.openshift-monitoring.svc:9091
 ```
+
+![img_5.png](assets/grf5.png)
+
+![img_6.png](assets/grf6.png)
 
 - `Authentication method` : `No Authentication`
 - `Skip TLS certificate validation` : active
@@ -248,16 +229,27 @@ Authorization
 ```text
 Bearer <TOKEN_GENERE_AVEC_OC_CREATE_TOKEN>
 ```
+Exemple: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2ODg5ODQ0ODg3ODg4NDY.....
 
 Ensuite, cliquez sur `Save & test`.
 
+![img_7.png](assets/grf7.png)
+
 Ce que vous devez obtenir :
 
-- un message de succes ;
+- un message de succès ;
+
+![img_8.png](assets/grf8.png)
 
 ## Etape 10 - Importer le dashboard API Performance Dashboard
 
 Maintenant que la datasource fonctionne, vous pouvez importer un dashboard pret a l'emploi depuis le catalogue Grafana.
+
+1. ouvrez `Dashboards` ;
+![img_9.png](assets/grf9.png)
+2. cliquez `Create dashboard` puis `Import a dashboard` ;
+![img_10.png](assets/grf10.png)
+
 
 Dashboard a utiliser :
 
@@ -265,31 +257,25 @@ Dashboard a utiliser :
 - `Nom` : `API Performance Dashboard`
 - `Lien` : [Grafana.com - API Performance Dashboard](https://grafana.com/grafana/dashboards/23520-api-performance-dashboard/)
 
-Grafana Labs le presente comme un dashboard utilisant la datasource Prometheus et des panneaux `barchart` et `timeseries`.
 
-Dans Grafana :
+![img_11.png](assets/grf11.png)
 
-1. ouvrez `Dashboards` ;
-2. cliquez `New` ;
-3. cliquez `Import` ;
-4. dans le champ d'import, saisissez :
 
-```text
-23520
-```
+3. Choisissez la datasource `prometheus-1`
 
-5. cliquez `Load` ;
-6. choisissez la datasource :
+![img_13.png](assets/grf12.png)
 
-```text
-openshift-thanos
-```
 
 7. cliquez `Import`.
 
-## Etape 11 - Generer un peu de trafic applicatif
+Apres l'import, vous devriez voir le dashboard dans la liste de vos dashboards.
 
-Pour que le dashboard soit parlant, il faut generer quelques requetes HTTP sur l'application.
+![img_14.png](assets/grf13.png)
+
+
+## Etape 11 - Générer un peu de trafic applicatif
+
+Pour que le dashboard soit parlant, il faut générer quelques requetes HTTP sur l'application.
 
 Exemples simples :
 
@@ -343,6 +329,5 @@ Si ces requetes retournent bien des series :
 - la datasource est bonne ;
 - il faut alors surtout generer davantage de trafic ou ajuster la plage temporelle du dashboard.
 
-![prometheus.png](assets/prometheus.png)
 
-![grf.png](assets/grf.png)
+![grf.png](assets/grf14.png)
