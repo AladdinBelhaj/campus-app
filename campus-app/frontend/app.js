@@ -94,7 +94,7 @@ async function refreshDashboard() {
     fetchJson("/api/dashboard"),
     fetchJson("/api/internships"),
     fetchJson("/api/departments"),
-    fetchJson("/api/application")
+    fetchJson("/api/applications")
   ]);
 
   dashboardIds.departments.textContent = dashboard.departments;
