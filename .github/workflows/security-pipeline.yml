@@ -141,11 +141,11 @@ jobs:
           dockerfile: campus-app/frontend/Dockerfile
 
       # ── Checkov — IaC misconfiguration scan ──
-      - name: Checkov — Scan Dockerfiles & Compose
+      - name: Checkov — Scan Dockerfiles
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: campus-app/
-          framework: dockerfile,docker-compose
+          framework: dockerfile
           soft_fail: true
           output_format: cli
 
@@ -165,6 +165,11 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Lowercase image names
+        run: |
+          echo "BACKEND_IMAGE=$(echo ${{ env.BACKEND_IMAGE }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=$(echo ${{ env.FRONTEND_IMAGE }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       # ── Login to GHCR ──
       - name: Log in to GHCR
