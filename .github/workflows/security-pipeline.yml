@@ -1,0 +1,298 @@
+# ============================================================================
+# 🔒 SECURITY PIPELINE — Campus App
+# ============================================================================
+# Stages:
+#   1. Build & Test
+#   2. Application Security  (SAST via SonarCloud, SCA via OWASP Dep-Check)
+#   3. IaC Security          (Hadolint + Checkov)
+#   4. Container Security    (Trivy + Dockle + Cosign + SBOM via Syft)
+#   5. DAST                  (OWASP ZAP baseline scan)
+# ============================================================================
+
+name: 🔒 Security Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/campus-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/campus-frontend
+  JAVA_VERSION: "21"
+
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║  Stage 1 — Build & Unit Tests                                       ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  build:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: campus-app/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+          cache-dependency-path: campus-app/backend/pom.xml
+
+      - name: Build & Test
+        run: mvn -B verify
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: campus-app/backend/target/*.jar
+          retention-days: 1
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║  Stage 2a — SAST + SonarCloud                                       ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  sast-sonar:
+    name: 🔍 SAST — SonarCloud
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: campus-app/backend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history needed for blame
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+          cache-dependency-path: campus-app/backend/pom.xml
+
+      - name: SonarCloud Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn -B verify sonar:sonar \
+            -Dsonar.projectKey=${{ github.repository_owner }}_campus-backend \
+            -Dsonar.organization=${{ github.repository_owner }} \
+            -Dsonar.host.url=https://sonarcloud.io
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║  Stage 2b — SCA (OWASP Dependency-Check)                            ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  sca-dependency-check:
+    name: 🔎 SCA — OWASP Dependency-Check
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: campus-app/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+          cache-dependency-path: campus-app/backend/pom.xml
+
+      - name: OWASP Dependency-Check
+        run: |
+          mvn -B org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -Dformat=ALL
+
+      - name: Upload Dependency-Check Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: campus-app/backend/target/dependency-check-report.*
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║  Stage 3 — IaC Security (Hadolint + Checkov)                        ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  iac-security:
+    name: 🏗️ IaC Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Hadolint — Dockerfile linting ──
+      - name: Hadolint — Backend Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: campus-app/backend/Dockerfile
+
+      - name: Hadolint — Frontend Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: campus-app/frontend/Dockerfile
+
+      # ── Checkov — IaC misconfiguration scan ──
+      - name: Checkov — Scan Dockerfiles & Compose
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: campus-app/
+          framework: dockerfile,docker-compose
+          soft_fail: true
+          output_format: cli
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║  Stage 4 — Build Images + Container Security + Supply Chain          ║
+  # ║  (Trivy, Dockle, Cosign, SBOM)                                      ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  container-security:
+    name: 📦 Container Security & Supply Chain
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Login to GHCR ──
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build & Push Backend Image ──
+      - name: Build & Push — Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: campus-app/backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+      # ── Build & Push Frontend Image ──
+      - name: Build & Push — Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: campus-app/frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+
+      # ── Trivy — Image Vulnerability Scanning ──
+      - name: Trivy — Scan Backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+        continue-on-error: true
+
+      - name: Trivy — Scan Frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+        continue-on-error: true
+
+      # ── Dockle — CIS Docker Benchmark ──
+      - name: Dockle — Lint Backend Image
+        uses: erzz/dockle-action@v1
+        with:
+          image: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          exit-code: "1"
+          failure-threshold: FATAL
+        continue-on-error: true
+
+      - name: Dockle — Lint Frontend Image
+        uses: erzz/dockle-action@v1
+        with:
+          image: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          exit-code: "1"
+          failure-threshold: FATAL
+        continue-on-error: true
+
+      # ── Syft — SBOM Generation (CycloneDX) ──
+      - name: Syft — SBOM Backend
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          format: cyclonedx-json
+          output-file: sbom-backend.cdx.json
+
+      - name: Syft — SBOM Frontend
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          format: cyclonedx-json
+          output-file: sbom-frontend.cdx.json
+
+      - name: Upload SBOM Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: sbom-*.cdx.json
+
+      # ── Cosign — Keyless Image Signing (Sigstore) ──
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Cosign — Sign Backend Image
+        run: cosign sign --yes ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+      - name: Cosign — Sign Frontend Image
+        run: cosign sign --yes ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║  Stage 5 — DAST (OWASP ZAP Baseline Scan)                           ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  dast-zap:
+    name: 🕷️ DAST — OWASP ZAP
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start application stack
+        working-directory: campus-app
+        run: |
+          docker compose -f docker-compose.local.yml up -d --build
+          echo "⏳ Waiting for backend to become healthy..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/actuator/health | grep -q UP; then
+              echo "✅ Backend is healthy!"
+              break
+            fi
+            echo "  Attempt $i/30 — waiting 5s..."
+            sleep 5
+          done
+
+      - name: OWASP ZAP — Baseline Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: http://localhost:8081
+          cmd_options: "-a"
+          allow_issue_writing: false
+
+      - name: Stop application stack
+        if: always()
+        working-directory: campus-app
+        run: docker compose -f docker-compose.local.yml down -v
